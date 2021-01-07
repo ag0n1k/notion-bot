@@ -18,6 +18,17 @@ CHOOSING, REPLY, TYPING_CHOICE = range(3)
 client = NotionBotClient(token=NOTION_TOKEN, link=NOTION_DB)
 
 
+def links(update, context):
+    with open(SAVE_FILE, 'a') as f:
+        for i in parse_url(update.message, parse_message):
+            if i.parse:
+                notion_url = client.add_row(name=i.get_title(), url=i.url, domain=i.get_domain())
+                context.bot.send_message(chat_id=update.effective_chat.id, text="Created: {}".format(notion_url))
+            else:
+                f.write(i.url + '\n')
+                context.bot.send_message(chat_id=update.effective_chat.id, text="Saved: {}".format(i.url))
+
+
 def start(update, context):
     reply_keyboard = [['Content', 'Link']]
 
@@ -106,7 +117,7 @@ def main() -> None:
 
     conv_handler = ConversationHandler(
         entry_points=[
-            MessageHandler(Filters.all & (~Filters.command), start),
+            MessageHandler(Filters.all & (~Filters.command), links),
             MessageHandler(Filters.command, load),
             # todo: add command for the contents works (save_content)
             # MessageHandler(Filters.command, content_load),

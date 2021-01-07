@@ -2,7 +2,7 @@ from notion.client import NotionClient
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
-from mechanize import Browser
+import requests
 
 
 class NotionLinkDB:
@@ -35,17 +35,22 @@ class NotionBotClient(object):
 class NotionUrl(object):
     def __init__(self, url, parse=True):
         self.url = url
-        self.domain = self.get_domain()
         self.parse = parse
-        self.browser = Browser()
         self.soup = self.get_soup()
-        self.title = self.soup.find('title').string
 
     def get_domain(self):
         parsed_uri = urlparse(self.url)
         return parsed_uri.netloc.replace('www.', '')
 
     def get_soup(self):
-        res = self.browser.open(self.url)
-        data = res.get_data()
-        return BeautifulSoup(data, 'html5lib')
+        if self.parse:
+            res = requests.get(self.url)
+            soup = BeautifulSoup(res.text, 'html.parser')
+            print("all meta: ", soup.find_all("meta"))
+            return soup
+        return None
+
+    def get_title(self):
+        if not self.soup:
+            return None
+        return self.soup.find('title').string

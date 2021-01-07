@@ -57,7 +57,6 @@ class NotionUrl(object):
         if self.parse:
             res = requests.get(self.url)
             soup = BeautifulSoup(res.text, 'html.parser')
-            print("all meta: ", soup.find_all("meta"))
             return soup
         return None
 

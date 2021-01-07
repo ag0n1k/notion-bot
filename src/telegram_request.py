@@ -1,18 +1,32 @@
-from telegram.ext import Updater
-from telegram.ext import CommandHandler
-from telegram.ext import MessageHandler, Filters
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
+from telegram.ext import (
+    Updater,
+    CommandHandler,
+    ConversationHandler,
+    MessageHandler,
+    Filters,
+)
 from notion_link import NotionBotClient, NotionUrl
-from settings import NOTION_TOKEN, NOTION_DB, TGRAM_TOKEN
+from settings import (
+    NOTION_TOKEN,
+    NOTION_DB,
+    TGRAM_TOKEN,
+    SAVE_FILE
+)
 
-updater = Updater(token=TGRAM_TOKEN, use_context=True)
-
-dispatcher = updater.dispatcher
+CHOOSING, REPLY, TYPING_CHOICE = range(3)
 client = NotionBotClient(token=NOTION_TOKEN, link=NOTION_DB)
 
 
 def start(update, context):
-    print(context)
-    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
+    reply_keyboard = [['Content', 'Link']]
+
+    update.message.reply_text(
+        'This url has content or it just link?',
+        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
+    )
+    context.user_data['urls'] = parse_url(update.message, parse_message)
+    return CHOOSING
 
 
 def echo(update, context):
@@ -22,7 +36,26 @@ def echo(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
 
 
-def parse_url(text: str, entities: list):
+def parse_message(message):
+    """
+    Telegram allows to post text with picture in different way: caption with caption entities.
+    By default received the text and entities.
+    :param message: the telegram message
+    :return: real text and entities
+    """
+    if message.caption:
+        return message.caption, message.caption_entities
+    return message.text, message.entities
+
+
+def parse_url(message, func):
+    """
+    Get the urls from the message
+    :param message: the original telegram message
+    :param func: the function to parse the message onto text and entities
+    :return: list of NotionUrl objects
+    """
+    text, entities = func(message)
     result = set()
     for entity in entities:
         if entity.type == 'text_link':
@@ -34,22 +67,50 @@ def parse_url(text: str, entities: list):
     return list(result)
 
 
-def test(update, context):
-    res = list()
-    print(update.message)
-    if update.message.text:
-        res = parse_url(update.message.text, update.message.entities)
-    elif update.message.caption:
-        res = parse_url(update.message.caption, update.message.caption_entities)
-    for i in res:
-        notion_url = client.add_row(name=i.title, url=i.url, domain=i.domain)
+def link_parse(update, context):
+    print('link logic')
+    print(context.user_data)
+    for i in context.user_data['urls']:
+        notion_url = client.add_row(name=i.get_title(), url=i.url, domain=i.get_domain())
         context.bot.send_message(chat_id=update.effective_chat.id, text="Created: {}".format(notion_url))
 
+    return ConversationHandler.END
 
-start_handler = CommandHandler('start', start)
-dispatcher.add_handler(start_handler)
 
-updater.start_polling()
+def content_parse(update, context):
+    print('Content logic')
+    print(context.user_data)
+    with open(SAVE_FILE, 'a') as f:
+        for i in context.user_data['urls']:
+            f.write(i.url)
+            context.bot.send_message(chat_id=update.effective_chat.id, text="Saved: {}".format(i.url))
+    return ConversationHandler.END
 
-test_handler = MessageHandler(Filters.all & (~Filters.command), test)
-dispatcher.add_handler(test_handler)
+
+def done(update, context) -> int:
+    update.message.reply_text("Something went wrong...")
+    return ConversationHandler.END
+
+
+def main() -> None:
+    updater = Updater(token=TGRAM_TOKEN, use_context=True)
+    dispatcher = updater.dispatcher
+
+    conv_handler = ConversationHandler(
+        entry_points=[MessageHandler(Filters.all & (~Filters.command), start)],
+        states={
+            CHOOSING: [
+                MessageHandler(Filters.regex('^(Link)$'), link_parse),
+                MessageHandler(Filters.regex('^(Content)$'), content_parse),
+            ]
+        },
+        fallbacks=[MessageHandler(Filters.regex('^Done$'), done)],
+    )
+
+    dispatcher.add_handler(conv_handler)
+    updater.start_polling()
+    updater.idle()
+
+
+if __name__ == '__main__':
+    main()

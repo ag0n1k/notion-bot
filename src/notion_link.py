@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 import requests
-
+from settings import LINK_DOMAINS
 
 class NotionLinkDB:
     name = ""
@@ -33,10 +33,21 @@ class NotionBotClient(object):
 
 
 class NotionUrl(object):
-    def __init__(self, url, parse=True):
+    link_domain = (
+        'youtube.com',
+        'twitch.com',
+    )
+
+    def __init__(self, url, force_link=False):
         self.url = url
-        self.parse = parse
+        self.parse = self.link_or_content(force=force_link)
         self.soup = self.get_soup()
+
+    def link_or_content(self, force):
+        domain = self.get_domain()
+        if domain in LINK_DOMAINS or force:
+            return True
+        return False
 
     def get_domain(self):
         parsed_uri = urlparse(self.url)

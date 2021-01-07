@@ -92,12 +92,25 @@ def done(update, context) -> int:
     return ConversationHandler.END
 
 
+def load(update, context) -> int:
+    print("load")
+    print("for link chose link or content")
+    print("sync link in links")
+    print("save content in contents")
+    return ConversationHandler.END
+
+
 def main() -> None:
     updater = Updater(token=TGRAM_TOKEN, use_context=True)
     dispatcher = updater.dispatcher
 
     conv_handler = ConversationHandler(
-        entry_points=[MessageHandler(Filters.all & (~Filters.command), start)],
+        entry_points=[
+            MessageHandler(Filters.all & (~Filters.command), start),
+            MessageHandler(Filters.command, load),
+            # todo: add command for the contents works (save_content)
+            # MessageHandler(Filters.command, content_load),
+        ],
         states={
             CHOOSING: [
                 MessageHandler(Filters.regex('^(Link)$'), link_parse),

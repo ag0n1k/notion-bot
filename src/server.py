@@ -6,7 +6,8 @@ from telegram.ext import (
     MessageHandler,
     Filters,
 )
-from notion_link import connect, NotionUrl
+import time
+from notion_link import NotionBotClient, NotionUrl
 from settings import (
     TGRAM_TOKEN,
 )
@@ -15,64 +16,75 @@ from yc_s3 import YandexS3, generate_body
 CHOOSING, ENTRY, TYPING_CHOICE, SET_NOTION_LINK, SET_NOTION_TOKEN = range(5)
 
 NOTION_TOKEN_TEMPLATE = "{user}_notion_token.json"
+NOTION_URL_TEMPLATE = "{user}_url_{ts}.json"
 
 s3_client = YandexS3()
 
 
-def links(update, context):
-    for i in parse_url(update.message, parse_message):
-        if i.parse:
-            notion_url = context.user_data['notion_client'].add_row(name=i.get_title(), url=i.url,
-                                                                    domain=i.get_domain())
-            context.bot.send_message(chat_id=update.effective_chat.id, text="Created: {}".format(notion_url))
-        else:
+def init_context(username, context):
+    context.user_data['notion_client'] = NotionBotClient(username)
+    n_c = context.user_data['notion_client']
+    if s3_client.object_exists(NOTION_TOKEN_TEMPLATE.format(user=n_c.user)):
+        body = s3_client.get_string(NOTION_TOKEN_TEMPLATE.format(user=n_c.user))
+        n_c.set_link(body['value']['link'])
+        n_c.set_token(body['value']['token'])
+        n_c.connect()
+        return ENTRY
+    return SET_NOTION_LINK
 
-            context.bot.send_message(chat_id=update.effective_chat.id, text="Saved: {}".format(i.url))
+
+def links(update, context):
+    to_save = []
+    try:
+        _ = context.user_data['notion_client']
+    except KeyError:
+        if init_context(update.message.chat['username'], context) == SET_NOTION_LINK:
+            update.message.reply_text("No Notion information found. Please use start command.")
+            return
+    n_c = context.user_data['notion_client']
+    for i in parse_url(update.message, parse_message):
+        if not i.parse:
+            to_save.append(i.url)
+            continue
+        notion_url = n_c.add_row(name=i.get_title(), url=i.url, domain=i.get_domain())
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Created: {}".format(notion_url))
+    if to_save:
+        s3_client.put_string(
+            key=NOTION_URL_TEMPLATE.format(user=n_c.user, ts=int(time.time())),
+            body=generate_body(n_c.user, to_save)
+        )
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Saved: {}".format('\n'.join(to_save)))
 
 
 def start(update, context):
     update.message.reply_text("Hi, this is notion link care bot that take care of your links in notion.\n"
                               "Okay, send me the database url in like:\n"
                               "https://www.notion.so/<namespace>/<db_hash>?v=<view_hash>")
-    context.user_data['user'] = update.message.chat['username']
-    if s3_client.object_exists(NOTION_TOKEN_TEMPLATE.format(user=context.user_data['user'])):
-        body = s3_client.get_string(NOTION_TOKEN_TEMPLATE.format(user=context.user_data['user']))
-        print(body)
-        context.user_data['notion_client'] = connect(
-            link=body['value']['link'],
-            token=body['value']['token']
-        )
-        update.message.reply_text("Excellent, now you can send me the links")
-        return ENTRY
-    return SET_NOTION_LINK
+    return init_context(update.message.chat['username'], context)
 
 
 def set_notion_link(update, context):
-    context.user_data['notion_link'] = update.message.text
-
+    context.user_data['notion_client'].set_link(update.message.text)
     update.message.reply_text("Good, now the hard story... send me the notion token.\n"
                               "It can be found in browser -> F12 -> Storage -> Cookies -> token_v2")
-
     return SET_NOTION_TOKEN
 
 
 def set_notion_token(update, context):
-    context.user_data['notion_token'] = update.message.text
+    n_c = context.user_data['notion_token']
+    n_c.set_token(update.message.text)
 
     s3_client.put_string(
-        NOTION_TOKEN_TEMPLATE.format(user=context.user_data['user']),
+        key=NOTION_TOKEN_TEMPLATE.format(user=n_c.user),
         body=generate_body(
-            context.user_data['user'],
+            n_c.user,
             dict(
-                link=context.user_data['notion_link'],
-                token=context.user_data['notion_token']
+                link=n_c.link,
+                token=n_c.token,
             )
         )
     )
-    context.user_data['notion_client'] = connect(
-        link=context.user_data['notion_link'],
-        token=context.user_data['notion_token']
-    )
+    n_c.connect()
     update.message.reply_text("Excellent, now you can send me the links")
     return ENTRY
 

@@ -6,10 +6,6 @@ import requests
 from settings import LINK_DOMAINS
 
 
-def connect(token, link):
-    return NotionBotClient(token=token, link=link)
-
-
 class NotionLinkDB:
     name = ""
     url = ""
@@ -17,17 +13,22 @@ class NotionLinkDB:
 
 
 class NotionBotClient(object):
-    def __init__(self, token, link):
+    def __init__(self, user):
+        self.user = user
+        self.token = None
+        self.link = None
+        self.client = None
+        self.cv = None
+
+    def set_token(self, token):
         self.token = token
+
+    def set_link(self, link):
         self.link = link
-        self.client = self.connect()
-        self.cv = self.get_collection_view()
 
     def connect(self):
-        return NotionClient(token_v2=self.token)
-
-    def get_collection_view(self):
-        return self.client.get_collection_view(self.link)
+        self.client = NotionClient(token_v2=self.token)
+        self.cv = self.client.get_collection_view(self.link)
 
     def add_row(self, name, url, domain):
         row = self.cv.collection.add_row()

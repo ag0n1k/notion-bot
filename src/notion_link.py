@@ -5,6 +5,11 @@ from bs4 import BeautifulSoup
 import requests
 from settings import LINK_DOMAINS
 
+
+def connect(token, link):
+    return NotionBotClient(token=token, link=link)
+
+
 class NotionLinkDB:
     name = ""
     url = ""

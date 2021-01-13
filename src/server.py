@@ -79,7 +79,11 @@ def optout(update, context):
 
 # TODO: read about command args
 def domain(update, context):
-    pass
+    context.user_data['bot_context'].update_domains(context.args)
+
+
+def get_domains(update, context):
+    context.user_data['bot_context'].print_domains(update.effective_chat.id)
 
 
 def done(update, context) -> int:
@@ -108,6 +112,7 @@ def main() -> None:
             CommandHandler("get", load),
             CommandHandler("start", start),
             CommandHandler("domain", domain),
+            CommandHandler("get_domains", get_domains),
             CommandHandler("configure", start),
             CommandHandler("optout", optout),
             # todo: add command for the contents works (save_content)

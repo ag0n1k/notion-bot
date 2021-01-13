@@ -95,7 +95,9 @@ class NotionContext(object):
             self.s3_client.put_url(self.username, n_uri.url)
             self.bot.send_message(chat_id=chat_id, text="Saved: {}".format(n_uri.url))
 
-    def update_domains(self, domain):
-        if domain not in set(self.link_domains):
-            self.link_domains.append(domain)
-            self.save_domains()
+    def update_domains(self, domains: list):
+        self.link_domains.extend(list(set(domains).difference(set(self.link_domains))))
+        self.save_domains()
+
+    def print_domains(self, chat_id):
+        self.bot.send_message(chat_id=chat_id, text="\n".join(self.link_domains))

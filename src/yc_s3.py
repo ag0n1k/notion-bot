@@ -23,7 +23,7 @@ class NotionBotS3Client(object):
                  bucket='notion-link-care',
                  service_name='s3',
                  endpoint_url='https://storage.yandexcloud.net',
-                 storage_class='COLD'):
+                 storage_class='STANDARD'):
         self.service_name = service_name
         self.endpoint_url = endpoint_url
         self.bucket = bucket

@@ -75,7 +75,7 @@ class NotionContext(object):
     def connect2notion(self):
         if self.s3_client.link_exists(self.username):
             body = self.s3_client.get_link(self.username)
-            self.notion_client.set_link(body['value']['link'])
+            self.notion_client.set_link(body['value'])
             self.notion_client.connect()
 
     def is_connected2notion(self):

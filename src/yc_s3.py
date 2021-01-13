@@ -93,6 +93,9 @@ class NotionBotS3Client(object):
     def get_link(self, user):
         return self.get_string(key=NOTION_LINK_TEMPLATE.format(user=user))
 
+    def get_domains(self, user):
+        return self.get_string(key=NOTION_DOMAINS_TEMPLATE.format(user=user))
+
     def link_exists(self, user):
         return self._object_exists(key=NOTION_LINK_TEMPLATE.format(user=user))
 

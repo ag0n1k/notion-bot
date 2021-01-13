@@ -65,6 +65,9 @@ def start(update, context):
 
 
 def set_notion_link(update, context):
+    if not context_inited(update.message.chat['username'], context):
+        update.message.reply_text("No Notion information found. Please use start command.")
+        return START
     context.user_data['bot_context'].set_notion_link(update.message.text)
     context.user_data['bot_context'].save_link()
     context.user_data['bot_context'].connect2notion()
@@ -79,10 +82,16 @@ def optout(update, context):
 
 # TODO: read about command args
 def domain(update, context):
+    if not context_inited(update.message.chat['username'], context):
+        update.message.reply_text("No Notion information found. Please use start command.")
+        return START
     context.user_data['bot_context'].update_domains(context.args)
 
 
 def get_domains(update, context):
+    if not context_inited(update.message.chat['username'], context):
+        update.message.reply_text("No Notion information found. Please use start command.")
+        return START
     context.user_data['bot_context'].print_domains(update.effective_chat.id)
 
 

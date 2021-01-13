@@ -38,7 +38,7 @@ class NotionUrl(object):
     def __init__(self, url):
         self.url = url
         self.domain = self._get_domain()
-        self.soup = None
+        self.content = None
 
     def _get_domain(self):
         parsed_uri = urlparse(self.url)
@@ -46,12 +46,12 @@ class NotionUrl(object):
 
     def soup(self):
         res = requests.get(self.url)
-        self.soup = BeautifulSoup(res.text, 'html.parser')
+        self.content = BeautifulSoup(res.text, 'html.parser')
 
     def get_title(self):
         if not self.soup:
             return None
-        return self.soup.find('title').string
+        return self.content.find('title').string
 
 
 class NotionContext(object):
@@ -62,6 +62,7 @@ class NotionContext(object):
         self.bot = bot
         self.chat_id = None
         self.link_domains = []
+        self.load_domains()
 
     def set_notion_link(self, link):
         self.notion_client.set_link(link)
@@ -71,6 +72,10 @@ class NotionContext(object):
 
     def save_domains(self):
         self.s3_client.put_domains(user=self.username, domains=self.link_domains)
+
+    def load_domains(self):
+        body = self.s3_client.get_domains(user=self.username)
+        self.link_domains = body['value']
 
     def connect2notion(self):
         if self.s3_client.link_exists(self.username):

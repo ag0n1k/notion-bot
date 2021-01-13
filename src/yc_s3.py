@@ -3,6 +3,9 @@ from botocore import exceptions as bexc
 import time
 import json
 
+NOTION_TOKEN_TEMPLATE = "{user}_notion_token.json"
+NOTION_URL_TEMPLATE = "{user}_url_{ts}.json"
+
 
 def dict_to_binary(the_dict):
     return ' '.join(format(ord(letter), 'b') for letter in json.dumps(the_dict))
@@ -18,11 +21,11 @@ def generate_body(user, value):
     )
 
 
-class YandexS3ClientError(Exception):
+class NotionBotS3ClientError(Exception):
     pass
 
 
-class YandexS3(object):
+class NotionBotS3Client(object):
     def __init__(self,
                  bucket='notion-link-care',
                  service_name='s3',
@@ -46,18 +49,51 @@ class YandexS3(object):
             Body=body
         )
 
-    def object_exists(self, key):
+    def put_token(self, user, link, token):
+        return self.put_string(
+            key=NOTION_TOKEN_TEMPLATE.format(user=user),
+            body=json.dumps(
+                dict(
+                    user=user,
+                    timestamp=int(time.time()),
+                    value=dict(
+                        link=link,
+                        token=token,
+                    )
+                )
+            )
+        )
+
+    def put_url(self, user, links):
+        return self.put_string(
+            key=NOTION_URL_TEMPLATE.format(user=user, ts=int(time.time())),
+            body=json.dumps(
+                dict(
+                    user=user,
+                    timestamp=int(time.time()),
+                    value=links
+                )
+            )
+        )
+
+    def get_string(self, key):
+        obj = self._get_object(key)
+        return json.loads(obj['Body'].read().decode('utf-8'))
+
+    def get_token(self, user):
+        return self.get_string(key=NOTION_TOKEN_TEMPLATE.format(user=user))
+
+    def token_exists(self, user):
+        return self._object_exists(key=NOTION_TOKEN_TEMPLATE.format(user=user))
+
+    def _object_exists(self, key):
         try:
             self.client.head_object(Bucket=self.bucket, Key=key)
         except bexc.ClientError as e:
             if e.response['Error']['Code'] == "404":
                 return False
-            raise YandexS3ClientError
+            raise NotionBotS3ClientError
         return True
 
-    def get_object(self, key):
+    def _get_object(self, key):
         return self.client.get_object(Bucket=self.bucket, Key=key)
-
-    def get_string(self, key):
-        obj = self.get_object(key)
-        return json.loads(obj['Body'].read().decode('utf-8'))

@@ -6,54 +6,64 @@ from telegram.ext import (
     MessageHandler,
     Filters,
 )
-import time
-from notion_link import NotionBotClient, NotionUrl
+from notion_link import NotionBotClient
+from notion_db import NotionUrl
 from settings import (
     TGRAM_TOKEN,
 )
-from yc_s3 import YandexS3, generate_body
+from yc_s3 import NotionBotS3Client
+from t_help import TelegramMessageUrl
 
-CHOOSING, ENTRY, TYPING_CHOICE, SET_NOTION_LINK, SET_NOTION_TOKEN = range(5)
+START, CHOOSING, ENTRY, TYPING_CHOICE, SET_NOTION_LINK, SET_NOTION_TOKEN = range(6)
+
+link_domain = (
+        'youtube.com',
+        'twitch.com',
+    )
 
 NOTION_TOKEN_TEMPLATE = "{user}_notion_token.json"
 NOTION_URL_TEMPLATE = "{user}_url_{ts}.json"
 
-s3_client = YandexS3()
+s3_client = NotionBotS3Client()
 
 
 def init_context(username, context):
     context.user_data['notion_client'] = NotionBotClient(username)
-    n_c = context.user_data['notion_client']
-    if s3_client.object_exists(NOTION_TOKEN_TEMPLATE.format(user=n_c.user)):
-        body = s3_client.get_string(NOTION_TOKEN_TEMPLATE.format(user=n_c.user))
-        n_c.set_link(body['value']['link'])
-        n_c.set_token(body['value']['token'])
-        n_c.connect()
+    if s3_client.token_exists(username):
+        body = s3_client.get_token(username)
+        context.user_data['notion_client'].set_link(body['value']['link'])
+        context.user_data['notion_client'].set_token(body['value']['token'])
+        context.user_data['notion_client'].connect()
         return ENTRY
     return SET_NOTION_LINK
 
 
-def links(update, context):
-    to_save = []
+def context_inited(username, context):
     try:
         _ = context.user_data['notion_client']
     except KeyError:
-        if init_context(update.message.chat['username'], context) == SET_NOTION_LINK:
-            update.message.reply_text("No Notion information found. Please use start command.")
-            return
-    n_c = context.user_data['notion_client']
-    for i in parse_url(update.message, parse_message):
-        if not i.parse:
-            to_save.append(i.url)
-            continue
-        notion_url = n_c.add_row(name=i.get_title(), url=i.url, domain=i.get_domain())
-        context.bot.send_message(chat_id=update.effective_chat.id, text="Created: {}".format(notion_url))
-    if to_save:
-        s3_client.put_string(
-            key=NOTION_URL_TEMPLATE.format(user=n_c.user, ts=int(time.time())),
-            body=generate_body(n_c.user, to_save)
-        )
-        context.bot.send_message(chat_id=update.effective_chat.id, text="Saved: {}".format('\n'.join(to_save)))
+        if init_context(username, context) == SET_NOTION_LINK:
+            return False
+    except Exception as e:
+        raise e
+    return True
+
+
+def links(update, context):
+    if not context_inited(update.message.chat['username'], context):
+        update.message.reply_text("No Notion information found. Please use start command.")
+        return START
+
+    message = TelegramMessageUrl(update.message)
+    message.parse_urls()
+    for url in message.urls:
+        n_uri = NotionUrl(url)
+        if n_uri.parse:
+            notion_url = context.user_data['notion_client'].add_row(name=n_uri.get_title(), url=n_uri.url, domain=n_uri.get_domain())
+            context.bot.send_message(chat_id=update.effective_chat.id, text="Created: {}".format(notion_url))
+        else:
+            s3_client.put_url(context.user_data['notion_client'].user, n_uri.url)
+            context.bot.send_message(chat_id=update.effective_chat.id, text="Saved: {}".format(n_uri.url))
 
 
 def start(update, context):
@@ -71,20 +81,13 @@ def set_notion_link(update, context):
 
 
 def set_notion_token(update, context):
-    n_c = context.user_data['notion_token']
-    n_c.set_token(update.message.text)
+    context.user_data['notion_client'].set_token(update.message.text)
 
-    s3_client.put_string(
-        key=NOTION_TOKEN_TEMPLATE.format(user=n_c.user),
-        body=generate_body(
-            n_c.user,
-            dict(
-                link=n_c.link,
-                token=n_c.token,
-            )
-        )
-    )
-    n_c.connect()
+    s3_client.put_token(user=context.user_data['notion_client'].user,
+                        link=context.user_data['notion_client'].link,
+                        token=context.user_data['notion_client'].token)
+
+    context.user_data['notion_client'].connect()
     update.message.reply_text("Excellent, now you can send me the links")
     return ENTRY
 
@@ -92,68 +95,6 @@ def set_notion_token(update, context):
 def optout(update, context):
     update.message.reply_text("Not implemented yet")
     return
-
-
-def de_start(update, context):
-    reply_keyboard = [['Content', 'Link']]
-
-    update.message.reply_text(
-        'This url has content or it just link?',
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
-    )
-    context.user_data['urls'] = parse_url(update.message, parse_message)
-    return CHOOSING
-
-
-def parse_message(message):
-    """
-    Telegram allows to post text with picture in different way: caption with caption entities.
-    By default received the text and entities.
-    :param message: the telegram message
-    :return: real text and entities
-    """
-    if message.caption:
-        return message.caption, message.caption_entities
-    return message.text, message.entities
-
-
-def parse_url(message, func):
-    """
-    Get the urls from the message
-    :param message: the original telegram message
-    :param func: the function to parse the message onto text and entities
-    :return: list of NotionUrl objects
-    """
-    text, entities = func(message)
-    result = set()
-    for entity in entities:
-        if entity.type == 'text_link':
-            result.add(NotionUrl(entity.url))
-        elif entity.type == 'url':
-            result.add(NotionUrl(text[entity.offset:entity.offset+entity.length]))
-        else:
-            print('got unknown type: ', entity.type)
-    return list(result)
-
-
-def link_parse(update, context):
-    print('link logic')
-    print(context.user_data)
-    for i in context.user_data['urls']:
-        notion_url = context.user_data['notion_client'].add_row(name=i.get_title(), url=i.url, domain=i.get_domain())
-        context.bot.send_message(chat_id=update.effective_chat.id, text="Created: {}".format(notion_url))
-
-    return ConversationHandler.END
-
-
-def content_parse(update, context):
-    print('Content logic')
-    print(context.user_data)
-    with open(SAVE_FILE, 'a') as f:
-        for i in context.user_data['urls']:
-            f.write(i.url)
-            context.bot.send_message(chat_id=update.effective_chat.id, text="Saved: {}".format(i.url))
-    return ConversationHandler.END
 
 
 def done(update, context) -> int:
@@ -184,15 +125,16 @@ def main() -> None:
             # MessageHandler(Filters.command, content_load),
         ],
         states={
+            START: [
+                CommandHandler("start", start),
+                MessageHandler(Filters.all & (~Filters.command), start),
+            ],
             ENTRY: [
                 MessageHandler(Filters.all & (~Filters.command), links),
             ],
-            CHOOSING: [
-                MessageHandler(Filters.regex('^(Link)$'), link_parse),
-                MessageHandler(Filters.regex('^(Content)$'), content_parse),
-            ],
             SET_NOTION_LINK: [MessageHandler(Filters.all, set_notion_link)],
             SET_NOTION_TOKEN: [MessageHandler(Filters.all, set_notion_token)],
+
         },
         fallbacks=[MessageHandler(Filters.regex('^Done$'), done)],
     )

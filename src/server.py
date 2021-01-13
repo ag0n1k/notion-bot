@@ -29,7 +29,7 @@ s3_client = NotionBotS3Client()
 def init_context(username, context):
     context.user_data['bot_context'] = NotionContext(s3_client=s3_client, username=username, bot=context.bot)
     context.user_data['bot_context'].connect2notion()
-    if not context.user_data['bot_context'].is_connected2notion():
+    if context.user_data['bot_context'].is_connected2notion():
         return ENTRY
     return SET_NOTION_LINK
 

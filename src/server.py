@@ -1,4 +1,5 @@
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
+import os
 from telegram.ext import (
     Updater,
     CommandHandler,
@@ -6,10 +7,8 @@ from telegram.ext import (
     MessageHandler,
     Filters,
 )
+
 from notion_bot import NotionContext
-from settings import (
-    TGRAM_TOKEN,
-)
 from yc_s3 import NotionBotS3Client
 from t_help import TelegramMessageUrl
 
@@ -64,20 +63,17 @@ def start(update, context):
 
 
 def set_notion_link(update, context):
-    context.user_data['notion_client'].set_link(update.message.text)
+    context.user_data['bot_context'].set_notion_link(update.message.text)
     update.message.reply_text("Good, now the hard story... send me the notion token.\n"
                               "It can be found in browser -> F12 -> Storage -> Cookies -> token_v2")
     return SET_NOTION_TOKEN
 
 
 def set_notion_token(update, context):
-    context.user_data['notion_client'].set_token(update.message.text)
+    context.user_data['bot_context'].set_notion_token(update.message.text)
+    context.user_data['bot_context'].save_token()
+    context.user_data['bot_context'].connect2notion()
 
-    s3_client.put_token(user=context.user_data['notion_client'].user,
-                        link=context.user_data['notion_client'].link,
-                        token=context.user_data['notion_client'].token)
-
-    context.user_data['notion_client'].connect()
     update.message.reply_text("Excellent, now you can send me the links")
     return ENTRY
 
@@ -101,7 +97,10 @@ def load(update, context) -> int:
 
 
 def main() -> None:
-    updater = Updater(token=TGRAM_TOKEN, use_context=True)
+    tgram_token = os.getenv('TELEGRAM_TOKEN')
+    if not tgram_token:
+        raise ValueError("Telegram token is undefined")
+    updater = Updater(token=tgram_token, use_context=True)
     dispatcher = updater.dispatcher
 
     conv_handler = ConversationHandler(

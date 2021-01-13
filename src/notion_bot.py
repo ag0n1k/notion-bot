@@ -1,7 +1,5 @@
 from notion.client import NotionClient
-
 from urllib.parse import urlparse
-
 from bs4 import BeautifulSoup
 import requests
 
@@ -69,6 +67,15 @@ class NotionContext(object):
         self.bot = bot
         self.chat_id = None
         self.link_domains = []
+
+    def set_notion_link(self, link):
+        self.notion_client.set_link(link)
+
+    def set_notion_token(self, token):
+        self.notion_client.set_token(token)
+
+    def save_token(self):
+        self.s3_client.put_token(user=self.username, link=self.notion_client.link, token=self.notion_client.token)
 
     def connect2notion(self):
         if self.s3_client.token_exists(self.username):

@@ -6,8 +6,7 @@ from telegram.ext import (
     MessageHandler,
     Filters,
 )
-from notion_link import NotionBotClient
-from notion_db import NotionUrl
+from notion_bot import NotionContext
 from settings import (
     TGRAM_TOKEN,
 )
@@ -28,19 +27,16 @@ s3_client = NotionBotS3Client()
 
 
 def init_context(username, context):
-    context.user_data['notion_client'] = NotionBotClient(username)
-    if s3_client.token_exists(username):
-        body = s3_client.get_token(username)
-        context.user_data['notion_client'].set_link(body['value']['link'])
-        context.user_data['notion_client'].set_token(body['value']['token'])
-        context.user_data['notion_client'].connect()
+    context.user_data['bot_context'] = NotionContext(s3_client=s3_client, username=username, bot=context.bot)
+    context.user_data['bot_context'].connect2notion()
+    if not context.user_data['bot_context'].is_connected2notion():
         return ENTRY
     return SET_NOTION_LINK
 
 
 def context_inited(username, context):
     try:
-        _ = context.user_data['notion_client']
+        _ = context.user_data['bot_context']
     except KeyError:
         if init_context(username, context) == SET_NOTION_LINK:
             return False
@@ -57,13 +53,7 @@ def links(update, context):
     message = TelegramMessageUrl(update.message)
     message.parse_urls()
     for url in message.urls:
-        n_uri = NotionUrl(url)
-        if n_uri.parse:
-            notion_url = context.user_data['notion_client'].add_row(name=n_uri.get_title(), url=n_uri.url, domain=n_uri.get_domain())
-            context.bot.send_message(chat_id=update.effective_chat.id, text="Created: {}".format(notion_url))
-        else:
-            s3_client.put_url(context.user_data['notion_client'].user, n_uri.url)
-            context.bot.send_message(chat_id=update.effective_chat.id, text="Saved: {}".format(n_uri.url))
+        context.user_data['bot_context'].process(url, update.effective_chat.id)
 
 
 def start(update, context):

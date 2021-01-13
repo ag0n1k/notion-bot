@@ -8,20 +8,6 @@ NOTION_URL_TEMPLATE = "{user}_url_{ts}.json"
 NOTION_DOMAINS_TEMPLATE = "{user}_domains.json"
 
 
-def dict_to_binary(the_dict):
-    return ' '.join(format(ord(letter), 'b') for letter in json.dumps(the_dict))
-
-
-def generate_body(user, value):
-    return json.dumps(
-        dict(
-            user=user,
-            timestamp=int(time.time()),
-            value=value
-        )
-    )
-
-
 class NotionBotS3ClientError(Exception):
     pass
 

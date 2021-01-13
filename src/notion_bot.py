@@ -11,21 +11,16 @@ class NotionLinkDB:
 
 
 class NotionBotClient(object):
-    def __init__(self, user):
+    def __init__(self, user, token):
         self.user = user
-        self.token = None
         self.link = None
-        self.client = None
+        self.client = NotionClient(token_v2=token)
         self.cv = None
-
-    def set_token(self, token):
-        self.token = token
 
     def set_link(self, link):
         self.link = link
 
     def connect(self):
-        self.client = NotionClient(token_v2=self.token)
         self.cv = self.client.get_collection_view(self.link)
 
     def is_connected(self):
@@ -60,9 +55,9 @@ class NotionUrl(object):
 
 
 class NotionContext(object):
-    def __init__(self, s3_client, username, bot):
+    def __init__(self, s3_client, username, bot, token):
         self.s3_client = s3_client
-        self.notion_client = NotionBotClient(username)
+        self.notion_client = NotionBotClient(username, token)
         self.username = username
         self.bot = bot
         self.chat_id = None
@@ -71,20 +66,16 @@ class NotionContext(object):
     def set_notion_link(self, link):
         self.notion_client.set_link(link)
 
-    def set_notion_token(self, token):
-        self.notion_client.set_token(token)
-
-    def save_token(self):
-        self.s3_client.put_token(user=self.username, link=self.notion_client.link, token=self.notion_client.token)
+    def save_link(self):
+        self.s3_client.put_link(user=self.username, link=self.notion_client.link)
 
     def save_domains(self):
         self.s3_client.put_domains(user=self.username, domains=self.link_domains)
 
     def connect2notion(self):
-        if self.s3_client.token_exists(self.username):
-            body = self.s3_client.get_token(self.username)
+        if self.s3_client.link_exists(self.username):
+            body = self.s3_client.get_link(self.username)
             self.notion_client.set_link(body['value']['link'])
-            self.notion_client.set_token(body['value']['token'])
             self.notion_client.connect()
 
     def is_connected2notion(self):

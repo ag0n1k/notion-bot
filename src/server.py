@@ -12,21 +12,18 @@ from notion_bot import NotionContext
 from yc_s3 import NotionBotS3Client
 from t_help import TelegramMessageUrl
 
-START, CHOOSING, ENTRY, TYPING_CHOICE, SET_NOTION_LINK, SET_NOTION_TOKEN = range(6)
+START, CHOOSING, ENTRY, TYPING_CHOICE, SET_NOTION_LINK = range(5)
 
-link_domain = (
-        'youtube.com',
-        'twitch.com',
-    )
-
-NOTION_TOKEN_TEMPLATE = "{user}_notion_token.json"
+NOTION_DB_TEMPLATE = "{user}_notion_db.json"
 NOTION_URL_TEMPLATE = "{user}_url_{ts}.json"
 
 s3_client = NotionBotS3Client()
 
 
 def init_context(username, context):
-    context.user_data['bot_context'] = NotionContext(s3_client=s3_client, username=username, bot=context.bot)
+    notion_token = os.getenv('NOTION_TOKEN')
+    context.user_data['bot_context'] = NotionContext(
+        s3_client=s3_client, username=username, bot=context.bot, token=notion_token)
     context.user_data['bot_context'].connect2notion()
     if context.user_data['bot_context'].is_connected2notion():
         return ENTRY
@@ -56,24 +53,21 @@ def links(update, context):
 
 
 def start(update, context):
-    update.message.reply_text("Hi, this is notion link care bot that take care of your links in notion.\n"
-                              "Okay, send me the database url in like:\n"
-                              "https://www.notion.so/<namespace>/<db_hash>?v=<view_hash>")
+    update.message.reply_text(
+        "Hi, this is notion link care bot that take care of your links in notion.\n"
+        "Okay, now we have 3 actions to be done:\n"
+        "  1) Choose a link database\n"
+        "  2) Add me (notion-link.care@yandex.ru) with edit permissions\n"
+        "  3) Share the link to me. Like:\n"
+        "https://www.notion.so/<namespace>/<db_hash>?v=<view_hash>"
+    )
     return init_context(update.message.chat['username'], context)
 
 
 def set_notion_link(update, context):
     context.user_data['bot_context'].set_notion_link(update.message.text)
-    update.message.reply_text("Good, now the hard story... send me the notion token.\n"
-                              "It can be found in browser -> F12 -> Storage -> Cookies -> token_v2")
-    return SET_NOTION_TOKEN
-
-
-def set_notion_token(update, context):
-    context.user_data['bot_context'].set_notion_token(update.message.text)
-    context.user_data['bot_context'].save_token()
+    context.user_data['bot_context'].save_link()
     context.user_data['bot_context'].connect2notion()
-
     update.message.reply_text("Excellent, now you can send me the links")
     return ENTRY
 
@@ -83,9 +77,10 @@ def optout(update, context):
     return
 
 
-#TODO: read about command args
+# TODO: read about command args
 def domain(update, context):
     pass
+
 
 def done(update, context) -> int:
     update.message.reply_text("Something went wrong...")
@@ -123,12 +118,8 @@ def main() -> None:
                 CommandHandler("start", start),
                 MessageHandler(Filters.all & (~Filters.command), start),
             ],
-            ENTRY: [
-                MessageHandler(Filters.all & (~Filters.command), links),
-            ],
+            ENTRY: [MessageHandler(Filters.all & (~Filters.command), links)],
             SET_NOTION_LINK: [MessageHandler(Filters.all, set_notion_link)],
-            SET_NOTION_TOKEN: [MessageHandler(Filters.all, set_notion_token)],
-
         },
         fallbacks=[MessageHandler(Filters.regex('^Done$'), done)],
     )

@@ -3,7 +3,7 @@ from botocore import exceptions as bexc
 import time
 import json
 
-NOTION_TOKEN_TEMPLATE = "{user}_notion_token.json"
+NOTION_LINK_TEMPLATE = "{user}_notion_link.json"
 NOTION_URL_TEMPLATE = "{user}_url_{ts}.json"
 NOTION_DOMAINS_TEMPLATE = "{user}_domains.json"
 
@@ -50,17 +50,14 @@ class NotionBotS3Client(object):
             Body=body
         )
 
-    def put_token(self, user, link, token):
+    def put_link(self, user, link):
         return self.put_string(
-            key=NOTION_TOKEN_TEMPLATE.format(user=user),
+            key=NOTION_LINK_TEMPLATE.format(user=user),
             body=json.dumps(
                 dict(
                     user=user,
                     timestamp=int(time.time()),
-                    value=dict(
-                        link=link,
-                        token=token,
-                    )
+                    value=link
                 )
             )
         )
@@ -93,11 +90,11 @@ class NotionBotS3Client(object):
         obj = self._get_object(key)
         return json.loads(obj['Body'].read().decode('utf-8'))
 
-    def get_token(self, user):
-        return self.get_string(key=NOTION_TOKEN_TEMPLATE.format(user=user))
+    def get_link(self, user):
+        return self.get_string(key=NOTION_LINK_TEMPLATE.format(user=user))
 
-    def token_exists(self, user):
-        return self._object_exists(key=NOTION_TOKEN_TEMPLATE.format(user=user))
+    def link_exists(self, user):
+        return self._object_exists(key=NOTION_LINK_TEMPLATE.format(user=user))
 
     def _object_exists(self, key):
         try:

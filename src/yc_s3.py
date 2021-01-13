@@ -3,8 +3,14 @@ from botocore import exceptions as bexc
 import time
 import json
 
+TEMPLATES_SWITCH = {
+    "link": "{user}_notion_link.json",
+    "urls": "{user}_urls.json",
+    "domains": "{user}_domains.json",
+}
+
 NOTION_LINK_TEMPLATE = "{user}_notion_link.json"
-NOTION_URL_TEMPLATE = "{user}_url_{ts}.json"
+NOTION_URL_TEMPLATE = "{user}_urls.json"
 NOTION_DOMAINS_TEMPLATE = "{user}_domains.json"
 
 
@@ -28,6 +34,24 @@ class NotionBotS3Client(object):
             endpoint_url=self.endpoint_url
         )
 
+    def put(self, user, value, value_type):
+        return self.put_string(
+            key=TEMPLATES_SWITCH[value_type].format(user=user),
+            body=json.dumps(
+                dict(
+                    user=user,
+                    timestamp=int(time.time()),
+                    value=value
+                )
+            )
+        )
+
+    def get(self, user, value_type):
+        return self.get_string(key=TEMPLATES_SWITCH[value_type].format(user=user))
+
+    def exists(self, user, value_type='link'):
+        return self._object_exists(key=TEMPLATES_SWITCH[value_type].format(user=user))
+
     def put_string(self, key, body):
         return self.client.put_object(
             Bucket=self.bucket,
@@ -36,54 +60,9 @@ class NotionBotS3Client(object):
             Body=body
         )
 
-    def put_link(self, user, link):
-        return self.put_string(
-            key=NOTION_LINK_TEMPLATE.format(user=user),
-            body=json.dumps(
-                dict(
-                    user=user,
-                    timestamp=int(time.time()),
-                    value=link
-                )
-            )
-        )
-
-    def put_url(self, user, links):
-        return self.put_string(
-            key=NOTION_URL_TEMPLATE.format(user=user, ts=int(time.time())),
-            body=json.dumps(
-                dict(
-                    user=user,
-                    timestamp=int(time.time()),
-                    value=links
-                )
-            )
-        )
-
-    def put_domains(self, user, domains):
-        return self.put_string(
-            key=NOTION_DOMAINS_TEMPLATE.format(user=user),
-            body=json.dumps(
-                dict(
-                    user=user,
-                    timestamp=int(time.time()),
-                    value=domains
-                )
-            )
-        )
-
     def get_string(self, key):
         obj = self._get_object(key)
         return json.loads(obj['Body'].read().decode('utf-8'))
-
-    def get_link(self, user):
-        return self.get_string(key=NOTION_LINK_TEMPLATE.format(user=user))
-
-    def get_domains(self, user):
-        return self.get_string(key=NOTION_DOMAINS_TEMPLATE.format(user=user))
-
-    def link_exists(self, user):
-        return self._object_exists(key=NOTION_LINK_TEMPLATE.format(user=user))
 
     def _object_exists(self, key):
         try:

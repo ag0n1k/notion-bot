@@ -61,6 +61,7 @@ class NotionContext(object):
         self.username = username
         self.bot = bot
         self.chat_id = None
+        self.urls = []
         self.link_domains = []
         self.load_domains()
 
@@ -68,37 +69,31 @@ class NotionContext(object):
         self.notion_client.set_link(link)
 
     def save_link(self):
-        self.s3_client.put_link(user=self.username, link=self.notion_client.link)
+        self.s3_client.put(user=self.username, value=self.notion_client.link, value_type='link')
 
     def save_domains(self):
-        self.s3_client.put_domains(user=self.username, domains=self.link_domains)
+        self.s3_client.put(user=self.username, value=self.link_domains, value_type='domains')
+
+    def save_urls(self):
+        self.s3_client.put(user=self.username, value=self.urls, value_type='urls')
 
     def load_domains(self):
-        body = self.s3_client.get_domains(user=self.username)
+        body = self.s3_client.get(user=self.username, value_type='domains')
         self.link_domains = body['value']
 
+
+    def load_links(self):
+        body = self.s3_client.get(user=self.username, value_type='links')
+        self.urls = body['value']
+
     def connect2notion(self):
-        if self.s3_client.link_exists(self.username):
-            body = self.s3_client.get_link(self.username)
+        if self.s3_client.exists(self.username, value_type='link'):
+            body = self.s3_client.get(self.username, value_type='link')
             self.notion_client.set_link(body['value'])
             self.notion_client.connect()
 
     def is_connected2notion(self):
         return self.notion_client.is_connected()
-
-    def process(self, url, chat_id):
-        n_uri = NotionUrl(url)
-        if n_uri.domain in self.link_domains:
-            n_uri.soup()
-            notion_url = self.notion_client.add_row(
-                name=n_uri.get_title(),
-                url=n_uri.url,
-                domain=n_uri.domain
-            )
-            self.bot.send_message(chat_id=chat_id, text="Created: {}".format(notion_url))
-        else:
-            self.s3_client.put_url(self.username, n_uri.url)
-            self.bot.send_message(chat_id=chat_id, text="Saved: {}".format(n_uri.url))
 
     def update_domains(self, domains: list):
         self.link_domains.extend(list(set(domains).difference(set(self.link_domains))))
@@ -106,3 +101,19 @@ class NotionContext(object):
 
     def print_domains(self, chat_id):
         self.bot.send_message(chat_id=chat_id, text="\n".join(self.link_domains))
+
+    def process(self, urls, chat_id):
+        for url in list(set(urls).difference(set(self.urls))):
+            n_uri = NotionUrl(url)
+            if n_uri.domain in self.link_domains:
+                n_uri.soup()
+                notion_url = self.notion_client.add_row(
+                    name=n_uri.get_title(),
+                    url=n_uri.url,
+                    domain=n_uri.domain
+                )
+                self.bot.send_message(chat_id=chat_id, text="Created: {}".format(notion_url))
+            else:
+                self.urls.append(url)
+            del n_uri
+        self.save_urls()

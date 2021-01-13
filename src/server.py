@@ -48,8 +48,7 @@ def links(update, context):
 
     message = TelegramMessageUrl(update.message)
     message.parse_urls()
-    for url in message.urls:
-        context.user_data['bot_context'].process(url, update.effective_chat.id)
+    context.user_data['bot_context'].process(message.urls, update.effective_chat.id)
 
 
 def start(update, context):
@@ -101,11 +100,29 @@ def done(update, context) -> int:
 
 
 def load(update, context) -> int:
+    if not context_inited(update.message.chat['username'], context):
+        update.message.reply_text("No Notion information found. Please use start command.")
+        return START
     print("load")
     print("for link chose link or content")
     print("sync link in links")
     print("save content in contents")
+    update.message.reply_text("urls: " + "\n".join(context.user_data['bot_context'].urls))
     return ConversationHandler.END
+
+
+def process_url(update, context):
+    reply_keyboard = [['Next', 'Stop']]
+    try:
+        url = context.user_data['bot_context'].urls.pop()
+        update.message.reply_text(
+            "Process the url: {}".format(url),
+            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
+        )
+        context.user_data['bot_context'].save_urls()
+    except IndexError:
+        update.message.reply_text("All urls processed. Congratulations!")
+    return CHOOSING
 
 
 def main() -> None:
@@ -124,6 +141,7 @@ def main() -> None:
             CommandHandler("get_domains", get_domains),
             CommandHandler("configure", start),
             CommandHandler("optout", optout),
+            CommandHandler("process", process_url),
             # todo: add command for the contents works (save_content)
             # MessageHandler(Filters.command, content_load),
         ],
@@ -134,10 +152,10 @@ def main() -> None:
             ],
             ENTRY: [MessageHandler(Filters.all & (~Filters.command), links)],
             SET_NOTION_LINK: [MessageHandler(Filters.all, set_notion_link)],
+            CHOOSING: [MessageHandler(Filters.regex('^(Next)$'), process_url),]
         },
         fallbacks=[MessageHandler(Filters.regex('^Done$'), done)],
     )
-    dispatcher.add_handler(CommandHandler("optout", optout))
     dispatcher.add_handler(conv_handler)
     updater.start_polling()
     updater.idle()

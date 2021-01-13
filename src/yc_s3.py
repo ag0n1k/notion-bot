@@ -62,7 +62,9 @@ class NotionBotS3Client(object):
 
     def get_string(self, key):
         obj = self._get_object(key)
-        return json.loads(obj['Body'].read().decode('utf-8'))
+        if obj:
+            return json.loads(obj['Body'].read().decode('utf-8'))
+        return None
 
     def _object_exists(self, key):
         try:
@@ -74,4 +76,6 @@ class NotionBotS3Client(object):
         return True
 
     def _get_object(self, key):
-        return self.client.get_object(Bucket=self.bucket, Key=key)
+        if self._object_exists(key):
+            return self.client.get_object(Bucket=self.bucket, Key=key)
+        return None

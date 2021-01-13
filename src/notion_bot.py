@@ -79,8 +79,11 @@ class NotionContext(object):
 
     def load_domains(self):
         body = self.s3_client.get(user=self.username, value_type='domains')
-        self.link_domains = body['value']
-
+        if body:
+            self.link_domains = body['value']
+        else:
+            self.link_domains = []
+            self.save_domains()
 
     def load_links(self):
         body = self.s3_client.get(user=self.username, value_type='links')

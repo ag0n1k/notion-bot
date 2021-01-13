@@ -77,6 +77,9 @@ class NotionContext(object):
     def save_token(self):
         self.s3_client.put_token(user=self.username, link=self.notion_client.link, token=self.notion_client.token)
 
+    def save_domains(self):
+        self.s3_client.put_domains(user=self.username, domains=self.link_domains)
+
     def connect2notion(self):
         if self.s3_client.token_exists(self.username):
             body = self.s3_client.get_token(self.username)
@@ -100,3 +103,8 @@ class NotionContext(object):
         else:
             self.s3_client.put_url(self.username, n_uri.url)
             self.bot.send_message(chat_id=chat_id, text="Saved: {}".format(n_uri.url))
+
+    def update_domains(self, domain):
+        if domain not in set(self.link_domains):
+            self.link_domains.append(domain)
+            self.save_domains()

@@ -5,6 +5,7 @@ import json
 
 NOTION_TOKEN_TEMPLATE = "{user}_notion_token.json"
 NOTION_URL_TEMPLATE = "{user}_url_{ts}.json"
+NOTION_DOMAINS_TEMPLATE = "{user}_domains.json"
 
 
 def dict_to_binary(the_dict):
@@ -72,6 +73,18 @@ class NotionBotS3Client(object):
                     user=user,
                     timestamp=int(time.time()),
                     value=links
+                )
+            )
+        )
+
+    def put_domains(self, user, domains):
+        return self.put_string(
+            key=NOTION_DOMAINS_TEMPLATE.format(user=user),
+            body=json.dumps(
+                dict(
+                    user=user,
+                    timestamp=int(time.time()),
+                    value=domains
                 )
             )
         )

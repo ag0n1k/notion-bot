@@ -83,6 +83,10 @@ def optout(update, context):
     return
 
 
+#TODO: read about command args
+def domain(update, context):
+    pass
+
 def done(update, context) -> int:
     update.message.reply_text("Something went wrong...")
     return ConversationHandler.END
@@ -108,6 +112,7 @@ def main() -> None:
             MessageHandler(Filters.all & (~Filters.command), links),
             CommandHandler("get", load),
             CommandHandler("start", start),
+            CommandHandler("domain", domain),
             CommandHandler("configure", start),
             CommandHandler("optout", optout),
             # todo: add command for the contents works (save_content)

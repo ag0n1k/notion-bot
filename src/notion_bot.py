@@ -1,29 +1,37 @@
 from notion.client import NotionClient
-from urllib.parse import urlparse
-from bs4 import BeautifulSoup
-import requests
+from yc_s3 import NotionBotS3Client
 
 
-class NotionLinkDB:
-    name = ""
-    url = ""
-    domain = ""
+class NotionBotClient(NotionClient):
+    def __init__(self, token):
+        super(NotionBotClient, self).__init__(token_v2=token)
+
+    def __new__(cls, token):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(NotionBotClient, cls).__new__(cls)
+        return cls.instance
 
 
-class NotionBotClient(object):
+class NotionCV(object):
     def __init__(self, user, token):
+        self.client = NotionBotClient(token)
         self.user = user
-        self.link = None
-        self.client = NotionClient(token_v2=token)
+        self._link = None
         self.cv = None
 
-    def set_link(self, link):
-        self.link = link
+    @property
+    def link(self):
+        return self._link
+
+    @link.setter
+    def link(self, value):
+        self._link = value
 
     def connect(self):
-        self.cv = self.client.get_collection_view(self.link)
+        self.cv = self.client.get_collection_view(self._link)
 
-    def is_connected(self):
+    @property
+    def connected(self):
         return True if self.cv else False
 
     def add_row(self, name, url, domain):
@@ -34,51 +42,27 @@ class NotionBotClient(object):
         return row.get_browseable_url()
 
 
-class NotionUrl(object):
-    def __init__(self, url):
-        self.url = url
-        self.domain = self._get_domain()
-        self.content = None
-
-    def _get_domain(self):
-        parsed_uri = urlparse(self.url)
-        return parsed_uri.netloc.replace('www.', '')
-
-    def soup(self):
-        res = requests.get(self.url)
-        self.content = BeautifulSoup(res.text, 'html.parser')
-
-    def get_title(self):
-        if not self.soup:
-            return None
-        return self.content.find('title').string
-
-
-class NotionContext(object):
-    def __init__(self, s3_client, username, bot, token):
-        self.s3_client = s3_client
-        self.notion_client = NotionBotClient(username, token)
-        self.username = username
+class NotionContext(NotionCV):
+    def __init__(self, user, bot, token):
+        super(NotionContext, self).__init__(user=user, token=token)
+        self.s3_client = NotionBotS3Client()
         self.bot = bot
         self.chat_id = None
         self.urls = []
         self.link_domains = []
         self.load_domains()
 
-    def set_notion_link(self, link):
-        self.notion_client.set_link(link)
-
     def save_link(self):
-        self.s3_client.put(user=self.username, value=self.notion_client.link, value_type='link')
+        self.s3_client.put(user=self.user, value=self.link, value_type='link')
 
     def save_domains(self):
-        self.s3_client.put(user=self.username, value=self.link_domains, value_type='domains')
+        self.s3_client.put(user=self.user, value=self.link_domains, value_type='domains')
 
     def save_urls(self):
-        self.s3_client.put(user=self.username, value=self.urls, value_type='urls')
+        self.s3_client.put(user=self.user, value=self.urls, value_type='urls')
 
     def load_domains(self):
-        body = self.s3_client.get(user=self.username, value_type='domains')
+        body = self.s3_client.get(user=self.user, value_type='domains')
         if body:
             self.link_domains = body['value']
         else:
@@ -86,17 +70,14 @@ class NotionContext(object):
             self.save_domains()
 
     def load_links(self):
-        body = self.s3_client.get(user=self.username, value_type='links')
+        body = self.s3_client.get(user=self.user, value_type='links')
         self.urls = body['value']
 
     def connect2notion(self):
-        if self.s3_client.exists(self.username, value_type='link'):
-            body = self.s3_client.get(self.username, value_type='link')
-            self.notion_client.set_link(body['value'])
-            self.notion_client.connect()
-
-    def is_connected2notion(self):
-        return self.notion_client.is_connected()
+        if self.s3_client.exists(self.user, value_type='link'):
+            body = self.s3_client.get(self.user, value_type='link')
+            self.link = body['value']
+            self.connect()
 
     def update_domains(self, domains: list):
         self.link_domains.extend(list(set(domains).difference(set(self.link_domains))))
@@ -110,7 +91,7 @@ class NotionContext(object):
             n_uri = NotionUrl(url)
             if n_uri.domain in self.link_domains:
                 n_uri.soup()
-                notion_url = self.notion_client.add_row(
+                notion_url = self.add_row(
                     name=n_uri.get_title(),
                     url=n_uri.url,
                     domain=n_uri.domain

@@ -9,32 +9,25 @@ from telegram.ext import (
 )
 
 from notion_bot import NotionContext
-from yc_s3 import NotionBotS3Client
 from telegram_helper import TelegramMessageUrl
 
 START, CHOOSING, ENTRY, TYPING_CHOICE, SET_NOTION_LINK = range(5)
 
-NOTION_DB_TEMPLATE = "{user}_notion_db.json"
-NOTION_URL_TEMPLATE = "{user}_url_{ts}.json"
 
-s3_client = NotionBotS3Client()
-
-
-def init_context(username, context):
+def init_context(user, context):
     notion_token = os.getenv('NOTION_TOKEN')
-    context.user_data['bot_context'] = NotionContext(
-        s3_client=s3_client, username=username, bot=context.bot, token=notion_token)
+    context.user_data['bot_context'] = NotionContext(user=user, bot=context.bot, token=notion_token)
     context.user_data['bot_context'].connect2notion()
     if context.user_data['bot_context'].is_connected2notion():
         return ENTRY
     return SET_NOTION_LINK
 
 
-def context_inited(username, context):
+def context_inited(user, context):
     try:
         _ = context.user_data['bot_context']
     except KeyError:
-        if init_context(username, context) == SET_NOTION_LINK:
+        if init_context(user, context) == SET_NOTION_LINK:
             return False
     except Exception as e:
         raise e

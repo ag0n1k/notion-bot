@@ -11,23 +11,27 @@ from telegram.ext import (
 from notion_bot import NotionContext
 from telegram_helper import TelegramMessageUrl
 
-START, CHOOSING, ENTRY, TYPING_CHOICE, SET_NOTION_LINK = range(5)
+START, CHOOSING, ENTRY, TYPING_CHOICE, SET_NOTION_LINK, CATEGORY = range(6)
 
 
-def init_context(user, context):
+def init_context(user, context, chat_id):
     notion_token = os.getenv('NOTION_TOKEN')
-    context.user_data['bot_context'] = NotionContext(user=user, bot=context.bot, token=notion_token)
-    context.user_data['bot_context'].connect2notion()
-    if context.user_data['bot_context'].is_connected2notion():
-        return ENTRY
+    context.user_data['bot_context'] = NotionContext(user=user, bot=context.bot, token=notion_token, chat_id=chat_id)
+    try:
+        context.user_data['bot_context'].connect()
+        if context.user_data['bot_context'].connected:
+            return ENTRY
+    except AttributeError:
+        # no link found
+        pass
     return SET_NOTION_LINK
 
 
-def context_inited(user, context):
+def context_inited(user, context, chat_id):
     try:
         _ = context.user_data['bot_context']
     except KeyError:
-        if init_context(user, context) == SET_NOTION_LINK:
+        if init_context(user, context, chat_id) == SET_NOTION_LINK:
             return False
     except Exception as e:
         raise e
@@ -35,13 +39,13 @@ def context_inited(user, context):
 
 
 def links(update, context):
-    if not context_inited(update.message.chat['username'], context):
+    if not context_inited(update.message.chat['username'], context, update.effective_chat.id):
         update.message.reply_text("No Notion information found. Please use start command.")
         return START
 
     message = TelegramMessageUrl(update.message)
     message.parse_urls()
-    context.user_data['bot_context'].process(message.urls, update.effective_chat.id)
+    context.user_data['bot_context'].process(message.urls)
 
 
 def start(update, context):
@@ -53,16 +57,16 @@ def start(update, context):
         "  3) Share the link to me. Like:\n"
         "https://www.notion.so/<namespace>/<db_hash>?v=<view_hash>"
     )
-    return init_context(update.message.chat['username'], context)
+    return init_context(update.message.chat['username'], context, update.effective_chat.id)
 
 
 def set_notion_link(update, context):
-    if not context_inited(update.message.chat['username'], context):
+    if not context_inited(update.message.chat['username'], context, update.effective_chat.id):
         update.message.reply_text("No Notion information found. Please use start command.")
         return START
-    context.user_data['bot_context'].set_notion_link(update.message.text)
+    context.user_data['bot_context'].link = update.message.text
     context.user_data['bot_context'].save_link()
-    context.user_data['bot_context'].connect2notion()
+    context.user_data['bot_context'].connect()
     update.message.reply_text("Excellent, now you can send me the links")
     return ENTRY
 
@@ -72,19 +76,32 @@ def optout(update, context):
     return
 
 
-# TODO: read about command args
-def domain(update, context):
-    if not context_inited(update.message.chat['username'], context):
+def get_categories(update, context):
+    if not context_inited(update.message.chat['username'], context, update.effective_chat.id):
         update.message.reply_text("No Notion information found. Please use start command.")
         return START
-    context.user_data['bot_context'].update_domains(context.args)
+    context.user_data['bot_context'].print_domains()
 
 
-def get_domains(update, context):
-    if not context_inited(update.message.chat['username'], context):
+def update_categories(update, context):
+    if not context_inited(update.message.chat['username'], context, update.effective_chat.id):
         update.message.reply_text("No Notion information found. Please use start command.")
         return START
-    context.user_data['bot_context'].print_domains(update.effective_chat.id)
+    if not context.user_data['process_url']:
+        update.message.reply_text("Missed the link",
+                                  reply_markup=ReplyKeyboardMarkup([['Next', 'Stop']], one_time_keyboard=True),)
+        return ConversationHandler.END
+    update.message.reply_text(
+        "Choose category or send a new one",
+        reply_markup=ReplyKeyboardMarkup([context.user_data['bot_context'].get_categories()], one_time_keyboard=True)
+    )
+    return CATEGORY
+
+
+def set_category(update, context):
+    context.user_data['bot_context'].update_domain(update.message.text, context.user_data['process_url'])
+    update.message.reply_text("Now resend me this message with url: {}".format(context.user_data['process_url']))
+    return ConversationHandler.END
 
 
 def done(update, context) -> int:
@@ -92,29 +109,28 @@ def done(update, context) -> int:
     return ConversationHandler.END
 
 
-def load(update, context) -> int:
-    if not context_inited(update.message.chat['username'], context):
-        update.message.reply_text("No Notion information found. Please use start command.")
-        return START
-    print("load")
-    print("for link chose link or content")
-    print("sync link in links")
-    print("save content in contents")
-    update.message.reply_text("urls: " + "\n".join(context.user_data['bot_context'].urls))
-    return ConversationHandler.END
+def next_or_stop(update, context):
+    update.message.reply_text(
+        "Processed the url: {}.\nGoing next?".format(context.user_data['process_url']),
+        reply_markup=ReplyKeyboardMarkup([['Next', 'Stop']], one_time_keyboard=True),
+    )
+    context.user_data['bot_context'].save_urls()
+    return CHOOSING
 
 
 def process_url(update, context):
-    reply_keyboard = [['Next', 'Stop']]
+    if not context_inited(update.message.chat['username'], context, update.effective_chat.id):
+        update.message.reply_text("No Notion information found. Please use start command.")
+        return START
     try:
-        url = context.user_data['bot_context'].urls.pop()
+        context.user_data['process_url'] = context.user_data['bot_context'].urls.pop()
         update.message.reply_text(
-            "Process the url: {}".format(url),
-            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
+            "Process the url: {}".format(context.user_data['process_url']),
+            reply_markup=ReplyKeyboardMarkup([['Manual', 'Auto']], one_time_keyboard=True),
         )
-        context.user_data['bot_context'].save_urls()
     except IndexError:
         update.message.reply_text("All urls processed. Congratulations!")
+        return ENTRY
     return CHOOSING
 
 
@@ -128,10 +144,8 @@ def main() -> None:
     conv_handler = ConversationHandler(
         entry_points=[
             MessageHandler(Filters.all & (~Filters.command), links),
-            CommandHandler("get", load),
             CommandHandler("start", start),
-            CommandHandler("domain", domain),
-            CommandHandler("get_domains", get_domains),
+            CommandHandler("categories", get_categories),
             CommandHandler("configure", start),
             CommandHandler("optout", optout),
             CommandHandler("process", process_url),
@@ -145,7 +159,12 @@ def main() -> None:
             ],
             ENTRY: [MessageHandler(Filters.all & (~Filters.command), links)],
             SET_NOTION_LINK: [MessageHandler(Filters.all, set_notion_link)],
-            CHOOSING: [MessageHandler(Filters.regex('^(Next)$'), process_url),]
+            CHOOSING: [
+                MessageHandler(Filters.regex('^(Next)$'), process_url),
+                MessageHandler(Filters.regex('^(Manual)$'), next_or_stop),
+                MessageHandler(Filters.regex('^(Auto)$'), update_categories),
+            ],
+            CATEGORY: [MessageHandler(Filters.all, set_category)],
         },
         fallbacks=[MessageHandler(Filters.regex('^Done$'), done)],
     )

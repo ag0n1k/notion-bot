@@ -2,6 +2,7 @@ import boto3
 from botocore import exceptions as bexc
 import time
 import json
+from utils import MetaSingleton
 
 TEMPLATES_SWITCH = {
     "link": "{user}_notion_link.json",
@@ -18,7 +19,7 @@ class NotionBotS3ClientError(Exception):
     pass
 
 
-class NotionBotS3Client(object):
+class NotionBotS3Client(metaclass=MetaSingleton):
     def __init__(self,
                  bucket='notion-link-care',
                  service_name='s3',

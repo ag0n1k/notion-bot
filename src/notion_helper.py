@@ -1,6 +1,7 @@
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import requests, json
+from notion.collection import CollectionRowBlock
 
 
 class NotionCategory(object):
@@ -21,14 +22,21 @@ class NotionCategory(object):
         return self._domains
 
     def __add__(self, other):
-        self._domains.append(other)
+        if not isinstance(other, list):
+            other = [other]
+        self._domains.extend(list(set(other).difference(set(self._domains))))
 
     def search(self, domain: str):
         return self._name if domain in self._domains else None
 
+    def __str__(self):
+        return self.dump
+
+    @property
     def dump(self):
         return json.dumps({
-            self._name: self._domains
+            'name': self._name,
+            'domains': self._domains
         })
 
     def load(self, body):

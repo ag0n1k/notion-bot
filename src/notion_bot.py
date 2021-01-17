@@ -1,5 +1,7 @@
 from notion.client import NotionClient
 from yc_s3 import NotionBotS3Client
+from notion_helper import NotionCategory, NotionUrl, NotionRow
+import json
 
 
 class NotionBotClient(NotionClient):
@@ -34,12 +36,10 @@ class NotionCV(object):
     def connected(self):
         return True if self.cv else False
 
-    def add_row(self, name, url, domain):
-        row = self.cv.collection.add_row()
-        row.name = name
-        row.url = url
-        row.domain = domain
-        return row.get_browseable_url()
+    @property
+    def row(self):
+        if self.connected:
+            return self.cv.collection.add_row()
 
 
 class NotionContext(NotionCV):
@@ -49,27 +49,31 @@ class NotionContext(NotionCV):
         self.bot = bot
         self.chat_id = None
         self.urls = []
-        self.link_domains = []
-        self.load_domains()
+        self.categories = []
+        self.__load()
 
     def save_link(self):
         self.s3_client.put(user=self.user, value=self.link, value_type='link')
 
-    def save_domains(self):
-        self.s3_client.put(user=self.user, value=self.link_domains, value_type='domains')
+    def save_categories(self):
+        self.s3_client.put(user=self.user, value=json.dumps([i.dump for i in self.categories]), value_type='category')
 
     def save_urls(self):
         self.s3_client.put(user=self.user, value=self.urls, value_type='urls')
 
-    def load_domains(self):
-        body = self.s3_client.get(user=self.user, value_type='domains')
-        if body:
-            self.link_domains = body['value']
-        else:
-            self.link_domains = []
-            self.save_domains()
+    def __load(self):
+        self.load_urls()
+        self.load_categories()
 
-    def load_links(self):
+    def load_categories(self):
+        body = self.s3_client.get(user=self.user, value_type='category')
+        if body:
+            for category in body['value']:
+                cat = NotionCategory()
+                cat.load(category)
+                self.categories.append(cat)
+
+    def load_urls(self):
         body = self.s3_client.get(user=self.user, value_type='links')
         self.urls = body['value']
 
@@ -79,25 +83,22 @@ class NotionContext(NotionCV):
             self.link = body['value']
             self.connect()
 
-    def update_domains(self, domains: list):
-        self.link_domains.extend(list(set(domains).difference(set(self.link_domains))))
-        self.save_domains()
-
     def print_domains(self, chat_id):
-        self.bot.send_message(chat_id=chat_id, text="\n".join(self.link_domains))
+        self.bot.send_message(chat_id=chat_id, text="\n".join(self.categories))
 
     def process(self, urls, chat_id):
         for url in list(set(urls).difference(set(self.urls))):
             n_uri = NotionUrl(url)
-            if n_uri.domain in self.link_domains:
-                n_uri.soup()
-                notion_url = self.add_row(
-                    name=n_uri.get_title(),
-                    url=n_uri.url,
-                    domain=n_uri.domain
-                )
-                self.bot.send_message(chat_id=chat_id, text="Created: {}".format(notion_url))
-            else:
-                self.urls.append(url)
+            for cat in self.categories:
+                if cat.search(n_uri.domain):
+                    n_uri.soup()
+                    row = self.row
+                    row.name = n_uri.title
+                    row.domain = n_uri.domain
+                    row.category = cat.name
+                    row.status = 'To Do'
+                    self.bot.send_message(chat_id=chat_id, text="Created: {}".format(row.get_browseable_url()))
+                else:
+                    self.urls.append(url)
             del n_uri
         self.save_urls()

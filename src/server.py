@@ -10,7 +10,7 @@ from telegram.ext import (
 
 from notion_bot import NotionContext
 from yc_s3 import NotionBotS3Client
-from t_help import TelegramMessageUrl
+from telegram_helper import TelegramMessageUrl
 
 START, CHOOSING, ENTRY, TYPING_CHOICE, SET_NOTION_LINK = range(5)
 

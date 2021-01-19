@@ -164,6 +164,13 @@ class NotionContext(NotionCV):
         cat.name = name
         self.categories.update({name: cat})
 
+    def remove_category(self, name):
+        if self.categories.get(name, None):
+            self.log.info("Removing the category for the user {user}, {cat}".format(user=self.user, cat=name))
+            del self.categories[name]
+            self.save_categories()
+            self.bot.send_message(chat_id=self.chat_id, text="Category removed: {}".format(name))
+
     def update_domain(self, category, url):
         self.log.info("Updating the category for the user {user}, {cat} with {url}".format(
             user=self.user, cat=category, url=url))

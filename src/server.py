@@ -77,7 +77,7 @@ def set_notion_link(update, context):
 
 def optout(update, context):
     update.message.reply_text("Not implemented yet")
-    return
+    return ConversationHandler.END
 
 
 def get_categories(update, context):
@@ -85,6 +85,7 @@ def get_categories(update, context):
         update.message.reply_text("No Notion information found. Please use start command.")
         return START
     context.user_data['bot_context'].print_domains()
+    return ConversationHandler.END
 
 
 def update_categories(update, context):
@@ -103,13 +104,42 @@ def update_categories(update, context):
 
 
 def set_category(update, context):
+    if not context_inited(update.message.chat['username'], context, update.effective_chat.id):
+        update.message.reply_text("No Notion information found. Please use start command.")
+        return START
+
     context.user_data['bot_context'].update_domain(update.message.text, context.user_data['process_url'])
     update.message.reply_text("Now resend me this message with url: {}".format(context.user_data['process_url']))
     return ConversationHandler.END
 
 
+def remove_category(update, context):
+    if not context_inited(update.message.chat['username'], context, update.effective_chat.id):
+        update.message.reply_text("No Notion information found. Please use start command.")
+        return START
+
+    update.message.reply_text(
+        "Choose the category to remove.",
+        reply_markup=ReplyKeyboardMarkup([context.user_data['bot_context'].get_categories()], one_time_keyboard=True)
+    )
+    return RM_CATEGORY
+
+
+def rm_category(update, context):
+    context.user_data['bot_context'].remove_category(update.message.text)
+    return ConversationHandler.END
+
+
 def done(update, context) -> int:
     update.message.reply_text("Something went wrong...")
+    return ConversationHandler.END
+
+
+def get_urls(update, context) -> int:
+    if not context_inited(update.message.chat['username'], context, update.effective_chat.id):
+        update.message.reply_text("No Notion information found. Please use start command.")
+        return START
+    update.message.reply_text("\n".join(context.user_data['bot_context'].urls))
     return ConversationHandler.END
 
 
@@ -150,6 +180,8 @@ def main() -> None:
             MessageHandler(Filters.all & (~Filters.command), links),
             CommandHandler("start", start),
             CommandHandler("categories", get_categories),
+            CommandHandler("links", get_urls),
+            CommandHandler("remove_category", remove_category),
             CommandHandler("configure", start),
             CommandHandler("optout", optout),
             CommandHandler("process", process_url),
@@ -169,6 +201,7 @@ def main() -> None:
                 MessageHandler(Filters.regex('^(Auto)$'), update_categories),
             ],
             CATEGORY: [MessageHandler(Filters.all, set_category)],
+            RM_CATEGORY: [MessageHandler(Filters.all, rm_category)],
         },
         fallbacks=[MessageHandler(Filters.regex('^Done$'), done)],
     )

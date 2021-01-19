@@ -15,19 +15,24 @@ import logging
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-START, CHOOSING, ENTRY, TYPING_CHOICE, SET_NOTION_LINK, CATEGORY = range(6)
+logger = logging.getLogger(__name__)
+
+START, CHOOSING, ENTRY, TYPING_CHOICE, SET_NOTION_LINK, CATEGORY, RM_CATEGORY = range(7)
 
 
 def init_context(user, context, chat_id):
+    logging.info("Initiating the context for the user: {user}".format(user=user))
     notion_token = os.getenv('NOTION_TOKEN')
     context.user_data['bot_context'] = NotionContext(user=user, bot=context.bot, token=notion_token, chat_id=chat_id)
     try:
         context.user_data['bot_context'].connect()
         if context.user_data['bot_context'].connected:
+            logging.info("Connection for the user's notion established.".format(user=user))
             return ENTRY
     except AttributeError:
         # no link found
         pass
+    logging.info("No user's notion found : {user}".format(user=user))
     return SET_NOTION_LINK
 
 
@@ -36,20 +41,25 @@ def context_inited(user, context, chat_id):
         _ = context.user_data['bot_context']
     except KeyError:
         if init_context(user, context, chat_id) == SET_NOTION_LINK:
+            logging.info("Context has not inited for the user: {user}".format(user=user))
             return False
     except Exception as e:
         raise e
+    logging.info("Context inited for the user: {user}".format(user=user))
     return True
 
 
 def links(update, context):
+    logging.info("Context inited for the user: {user}".format(user=update.message.chat['username']))
     if not context_inited(update.message.chat['username'], context, update.effective_chat.id):
         update.message.reply_text("No Notion information found. Please use start command.")
         return START
-
+    logging.info("Processing the message for the user: {user}".format(user=update.message.chat['username']))
     message = TelegramMessageUrl(update.message)
     message.parse_urls()
     context.user_data['bot_context'].process(message.urls)
+    logging.info("Processed the message for the user: {user}".format(user=update.message.chat['username']))
+    return ConversationHandler.END
 
 
 def start(update, context):

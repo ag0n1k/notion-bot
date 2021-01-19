@@ -11,6 +11,10 @@ from telegram.ext import (
 from notion_bot import NotionContext
 from telegram_helper import TelegramMessageUrl
 
+import logging
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
 START, CHOOSING, ENTRY, TYPING_CHOICE, SET_NOTION_LINK, CATEGORY = range(6)
 
 
@@ -170,6 +174,7 @@ def main() -> None:
     )
     dispatcher.add_handler(conv_handler)
     updater.start_polling()
+
     updater.idle()
 
 

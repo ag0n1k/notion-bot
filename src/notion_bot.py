@@ -95,7 +95,7 @@ class NotionContext(NotionCV):
 
     def load_urls(self):
         self.log.info("Loading the urls for the user: {user}".format(user=self.user))
-        body = self.s3_client.get(user=self.user, value_type='links')
+        body = self.s3_client.get(user=self.user, value_type='urls')
         if body:
             self.log.info("Found the urls for the user: {user}".format(user=self.user))
             self.urls = body['value']

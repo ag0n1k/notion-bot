@@ -1,122 +1,143 @@
 from notion.client import NotionClient
-from urllib.parse import urlparse
-from bs4 import BeautifulSoup
-import requests
+from yc_s3 import NotionBotS3Client
+from notion_helper import NotionCategory, NotionUrl
+from utils import MetaSingleton
+import json
 
 
-class NotionLinkDB:
-    name = ""
-    url = ""
-    domain = ""
+class NotionBotClient(NotionClient, metaclass=MetaSingleton):
+    def __init__(self, token):
+        super().__init__(token_v2=token)
 
 
-class NotionBotClient(object):
+class NotionCV(object):
     def __init__(self, user, token):
+        self.client = NotionBotClient(token)
         self.user = user
-        self.link = None
-        self.client = NotionClient(token_v2=token)
+        self._link = None
         self.cv = None
 
-    def set_link(self, link):
-        self.link = link
+    @property
+    def link(self):
+        return self._link
+
+    @link.setter
+    def link(self, value):
+        self._link = value
 
     def connect(self):
-        self.cv = self.client.get_collection_view(self.link)
+        self.cv = self.client.get_collection_view(self._link)
 
-    def is_connected(self):
+    @property
+    def connected(self):
         return True if self.cv else False
 
-    def add_row(self, name, url, domain):
-        row = self.cv.collection.add_row()
-        row.name = name
-        row.url = url
-        row.domain = domain
-        return row.get_browseable_url()
+    @property
+    def row(self):
+        if self.connected:
+            return self.cv.collection.add_row()
 
 
-class NotionUrl(object):
-    def __init__(self, url):
-        self.url = url
-        self.domain = self._get_domain()
-        self.content = None
-
-    def _get_domain(self):
-        parsed_uri = urlparse(self.url)
-        return parsed_uri.netloc.replace('www.', '')
-
-    def soup(self):
-        res = requests.get(self.url)
-        self.content = BeautifulSoup(res.text, 'html.parser')
-
-    def get_title(self):
-        if not self.soup:
-            return None
-        return self.content.find('title').string
-
-
-class NotionContext(object):
-    def __init__(self, s3_client, username, bot, token):
-        self.s3_client = s3_client
-        self.notion_client = NotionBotClient(username, token)
-        self.username = username
+class NotionContext(NotionCV):
+    def __init__(self, user, bot, token, chat_id):
+        super(NotionContext, self).__init__(user=user, token=token)
+        self.s3_client = NotionBotS3Client()
         self.bot = bot
-        self.chat_id = None
+        self.chat_id = chat_id
         self.urls = []
-        self.link_domains = []
-        self.load_domains()
-
-    def set_notion_link(self, link):
-        self.notion_client.set_link(link)
+        self.categories = {}
+        self.__load()
 
     def save_link(self):
-        self.s3_client.put(user=self.username, value=self.notion_client.link, value_type='link')
+        self.s3_client.put(user=self.user, value=self.link, value_type='link')
 
-    def save_domains(self):
-        self.s3_client.put(user=self.username, value=self.link_domains, value_type='domains')
+    def save_categories(self):
+        self.s3_client.put(
+            user=self.user,
+            value=json.dumps([i.dump for i in self.categories.values()]),
+            value_type='category'
+        )
 
     def save_urls(self):
-        self.s3_client.put(user=self.username, value=self.urls, value_type='urls')
+        self.s3_client.put(user=self.user, value=self.urls, value_type='urls')
 
-    def load_domains(self):
-        body = self.s3_client.get(user=self.username, value_type='domains')
+    def __load(self):
+        self.load_link()
+        self.load_urls()
+        self.load_categories()
+
+    def load_link(self):
+        body = self.s3_client.get(user=self.user, value_type='link')
         if body:
-            self.link_domains = body['value']
-        else:
-            self.link_domains = []
-            self.save_domains()
+            self.link = body['value']
 
-    def load_links(self):
-        body = self.s3_client.get(user=self.username, value_type='links')
-        self.urls = body['value']
+    def load_categories(self):
+        body = self.s3_client.get(user=self.user, value_type='category')
+        if body:
+            for category in json.loads(body['value']):
+                cat = NotionCategory()
+                cat.load(category)
+                self.categories.update({cat.name: cat})
+
+    def load_urls(self):
+        body = self.s3_client.get(user=self.user, value_type='links')
+        if body:
+            self.urls = body['value']
 
     def connect2notion(self):
-        if self.s3_client.exists(self.username, value_type='link'):
-            body = self.s3_client.get(self.username, value_type='link')
-            self.notion_client.set_link(body['value'])
-            self.notion_client.connect()
+        if self.s3_client.exists(self.user, value_type='link'):
+            body = self.s3_client.get(self.user, value_type='link')
+            self.link = body['value']
+            self.connect()
 
-    def is_connected2notion(self):
-        return self.notion_client.is_connected()
+    def get_categories(self):
+        return [i for i in self.categories.keys()]
 
-    def update_domains(self, domains: list):
-        self.link_domains.extend(list(set(domains).difference(set(self.link_domains))))
-        self.save_domains()
+    def print_domains(self):
+        if self.categories:
+            self.send_message("\n".join([str(i) for i in self.categories.values()]))
+        else:
+            self.send_message("No categories configured")
 
-    def print_domains(self, chat_id):
-        self.bot.send_message(chat_id=chat_id, text="\n".join(self.link_domains))
+    def send_message(self, text):
+        self.bot.send_message(chat_id=self.chat_id, text=text)
 
-    def process(self, urls, chat_id):
+    def find_category(self, domain):
+        for name, cat in self.categories.items():
+            if cat.search(domain):
+                return cat.name
+        return None
+
+    def process(self, urls):
+        res = []
         for url in list(set(urls).difference(set(self.urls))):
             n_uri = NotionUrl(url)
-            if n_uri.domain in self.link_domains:
+            cat_name = self.find_category(n_uri.domain)
+            if cat_name:
                 n_uri.soup()
-                notion_url = self.notion_client.add_row(
-                    name=n_uri.get_title(),
-                    url=n_uri.url,
-                    domain=n_uri.domain
-                )
-                self.bot.send_message(chat_id=chat_id, text="Created: {}".format(notion_url))
+                row = self.row
+                row.name = n_uri.title
+                row.url = url
+                row.domain = n_uri.domain
+                row.category = cat_name
+                row.status = 'To Do'
+                res.append(row.get_browseable_url())
             else:
                 self.urls.append(url)
+                res.append(url)
             del n_uri
         self.save_urls()
+        self.bot.send_message(chat_id=self.chat_id, text="Processed: {}".format("\n".join(res)))
+
+    def add_category(self, name):
+        cat = NotionCategory()
+        cat.name = name
+        self.categories.update({name: cat})
+
+    def update_domain(self, category, url):
+        cat = self.categories.get(category, None)
+        if not cat:
+            self.add_category(category)
+            self.update_domain(category, url)
+        cat += NotionUrl(url).domain
+        self.save_categories()

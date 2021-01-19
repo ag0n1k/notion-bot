@@ -2,23 +2,16 @@ import boto3
 from botocore import exceptions as bexc
 import time
 import json
+from utils import MetaSingleton
 
-TEMPLATES_SWITCH = {
-    "link": "{user}_notion_link.json",
-    "urls": "{user}_urls.json",
-    "domains": "{user}_domains.json",
-}
-
-NOTION_LINK_TEMPLATE = "{user}_notion_link.json"
-NOTION_URL_TEMPLATE = "{user}_urls.json"
-NOTION_DOMAINS_TEMPLATE = "{user}_domains.json"
+S3_TEMPLATE = "{user}_notion_bot_{value}.json"
 
 
 class NotionBotS3ClientError(Exception):
     pass
 
 
-class NotionBotS3Client(object):
+class NotionBotS3Client(metaclass=MetaSingleton):
     def __init__(self,
                  bucket='notion-link-care',
                  service_name='s3',
@@ -36,7 +29,7 @@ class NotionBotS3Client(object):
 
     def put(self, user, value, value_type):
         return self.put_string(
-            key=TEMPLATES_SWITCH[value_type].format(user=user),
+            key=S3_TEMPLATE.format(user=user, value=value_type),
             body=json.dumps(
                 dict(
                     user=user,
@@ -47,10 +40,10 @@ class NotionBotS3Client(object):
         )
 
     def get(self, user, value_type):
-        return self.get_string(key=TEMPLATES_SWITCH[value_type].format(user=user))
+        return self.get_string(key=S3_TEMPLATE.format(user=user, value=value_type))
 
     def exists(self, user, value_type='link'):
-        return self._object_exists(key=TEMPLATES_SWITCH[value_type].format(user=user))
+        return self._object_exists(key=S3_TEMPLATE.format(user=user, value=value_type))
 
     def put_string(self, key, body):
         return self.client.put_object(

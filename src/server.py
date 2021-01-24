@@ -11,19 +11,28 @@ from telegram.ext import (
 from notion_bot import NotionContext
 from telegram_helper import TelegramMessageUrl
 
-START, CHOOSING, ENTRY, TYPING_CHOICE, SET_NOTION_LINK, CATEGORY = range(6)
+import logging
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+logger = logging.getLogger(__name__)
+
+START, CHOOSING, ENTRY, TYPING_CHOICE, SET_NOTION_LINK, CATEGORY, RM_CATEGORY = range(7)
 
 
 def init_context(user, context, chat_id):
+    logging.info("Initiating the context for the user: {user}".format(user=user))
     notion_token = os.getenv('NOTION_TOKEN')
     context.user_data['bot_context'] = NotionContext(user=user, bot=context.bot, token=notion_token, chat_id=chat_id)
     try:
         context.user_data['bot_context'].connect()
         if context.user_data['bot_context'].connected:
+            logging.info("Connection for the user's notion established.".format(user=user))
             return ENTRY
     except AttributeError:
         # no link found
         pass
+    logging.info("No user's notion found : {user}".format(user=user))
     return SET_NOTION_LINK
 
 
@@ -32,20 +41,25 @@ def context_inited(user, context, chat_id):
         _ = context.user_data['bot_context']
     except KeyError:
         if init_context(user, context, chat_id) == SET_NOTION_LINK:
+            logging.info("Context has not inited for the user: {user}".format(user=user))
             return False
     except Exception as e:
         raise e
+    logging.info("Context inited for the user: {user}".format(user=user))
     return True
 
 
 def links(update, context):
+    logging.info("Context inited for the user: {user}".format(user=update.message.chat['username']))
     if not context_inited(update.message.chat['username'], context, update.effective_chat.id):
         update.message.reply_text("No Notion information found. Please use start command.")
         return START
-
+    logging.info("Processing the message for the user: {user}".format(user=update.message.chat['username']))
     message = TelegramMessageUrl(update.message)
     message.parse_urls()
     context.user_data['bot_context'].process(message.urls)
+    logging.info("Processed the message for the user: {user}".format(user=update.message.chat['username']))
+    return ConversationHandler.END
 
 
 def start(update, context):
@@ -73,7 +87,7 @@ def set_notion_link(update, context):
 
 def optout(update, context):
     update.message.reply_text("Not implemented yet")
-    return
+    return ConversationHandler.END
 
 
 def get_categories(update, context):
@@ -81,6 +95,7 @@ def get_categories(update, context):
         update.message.reply_text("No Notion information found. Please use start command.")
         return START
     context.user_data['bot_context'].print_domains()
+    return ConversationHandler.END
 
 
 def update_categories(update, context):
@@ -99,13 +114,42 @@ def update_categories(update, context):
 
 
 def set_category(update, context):
+    if not context_inited(update.message.chat['username'], context, update.effective_chat.id):
+        update.message.reply_text("No Notion information found. Please use start command.")
+        return START
+
     context.user_data['bot_context'].update_domain(update.message.text, context.user_data['process_url'])
     update.message.reply_text("Now resend me this message with url: {}".format(context.user_data['process_url']))
     return ConversationHandler.END
 
 
+def remove_category(update, context):
+    if not context_inited(update.message.chat['username'], context, update.effective_chat.id):
+        update.message.reply_text("No Notion information found. Please use start command.")
+        return START
+
+    update.message.reply_text(
+        "Choose the category to remove.",
+        reply_markup=ReplyKeyboardMarkup([context.user_data['bot_context'].get_categories()], one_time_keyboard=True)
+    )
+    return RM_CATEGORY
+
+
+def rm_category(update, context):
+    context.user_data['bot_context'].remove_category(update.message.text)
+    return ConversationHandler.END
+
+
 def done(update, context) -> int:
     update.message.reply_text("Something went wrong...")
+    return ConversationHandler.END
+
+
+def get_urls(update, context) -> int:
+    if not context_inited(update.message.chat['username'], context, update.effective_chat.id):
+        update.message.reply_text("No Notion information found. Please use start command.")
+        return START
+    update.message.reply_text("\n".join(context.user_data['bot_context'].urls))
     return ConversationHandler.END
 
 
@@ -146,6 +190,8 @@ def main() -> None:
             MessageHandler(Filters.all & (~Filters.command), links),
             CommandHandler("start", start),
             CommandHandler("categories", get_categories),
+            CommandHandler("links", get_urls),
+            CommandHandler("remove_category", remove_category),
             CommandHandler("configure", start),
             CommandHandler("optout", optout),
             CommandHandler("process", process_url),
@@ -165,11 +211,13 @@ def main() -> None:
                 MessageHandler(Filters.regex('^(Auto)$'), update_categories),
             ],
             CATEGORY: [MessageHandler(Filters.all, set_category)],
+            RM_CATEGORY: [MessageHandler(Filters.all, rm_category)],
         },
         fallbacks=[MessageHandler(Filters.regex('^Done$'), done)],
     )
     dispatcher.add_handler(conv_handler)
     updater.start_polling()
+
     updater.idle()
 
 

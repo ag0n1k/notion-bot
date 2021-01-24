@@ -8,8 +8,11 @@ FROM python:3.8
 
 WORKDIR /src
 
-COPY requirements.txt .
 
+ADD notion-py.tar.gz .
+RUN python setup.py install
+
+COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 COPY src/ .

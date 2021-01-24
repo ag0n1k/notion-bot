@@ -179,5 +179,6 @@ class NotionContext(NotionCV):
             self.log.info("Category for the user {user}, not found: {cat}".format(user=self.user, cat=cat))
             self.add_category(category)
             self.update_domain(category, url)
-        cat += NotionUrl(url).domain
-        self.save_categories()
+        else:
+            cat += NotionUrl(url).domain
+            self.save_categories()

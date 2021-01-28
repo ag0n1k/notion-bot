@@ -4,21 +4,16 @@ logger = logging.getLogger(__name__)
 
 
 class NBotCategoryContainer(object):
-    def __init__(self, data=None):
-        self._categories = data
+    def __init__(self):
+        self._categories = {}
 
     def __get__(self, instance, owner):
         logger.info("Get _categories")
         return self._categories.values()
 
-    # def __set__(self, instance, value):
-    #     for k, v in value.items():
-    #         self._categories.update({k: NBotCategory(name=k, domains=v)})
-
-    def update(self, name):
-        if not self._categories.get(name, None):
-            logger.info("Adding new category: {}".format(name))
-            self._categories.update({name: NBotCategory(name=name)})
+    def __set__(self, instance, value):
+        for k, v in value.items():
+            self._categories.update({k: NBotCategory(name=k, domains=v)})
 
     def __repr__(self):
         return "\n".join([str(i) for i in self._categories.values()])
@@ -41,6 +36,12 @@ class NBotCategoryContainer(object):
 
     def dump(self):
         return [i.dump for i in self._categories.values()]
+
+    def load(self, body: list):
+        for item in body:
+            cat = NBotCategory()
+            cat.load(item)
+            self._categories.update({cat.name: cat})
 
     def update(self, name):
         if not self._categories.get(name, None):
@@ -97,4 +98,6 @@ class NBotCategory(object):
             'domains': self._domains
         }
 
-
+    def load(self, body):
+        self.name = body['name']
+        self.domains = body['domains']

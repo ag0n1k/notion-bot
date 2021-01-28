@@ -38,6 +38,14 @@ class NBotContext(object):
     def dblink(self, value):
         self._dblink = value
 
+    @property
+    def last_link(self):
+        try:
+            self.current_link = self.links.pop()
+        except IndexError:
+            return False
+        return True
+
     def clear(self):
         self.current_link = ""
 
@@ -91,6 +99,6 @@ class NBotContext(object):
     def __load(self, body):
         logger.info(body)
         self.username = body['username']
-        self.categories = NBotCategoryContainer(data=body['categories'])
+        self.categories.load(body['categories'])
         self.dblink = body['dblink']
         self.links = body['links']

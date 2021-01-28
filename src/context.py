@@ -38,6 +38,9 @@ class NBotContext(object):
     def dblink(self, value):
         self._dblink = value
 
+    def clear(self):
+        self.current_link = ""
+
     def save(self):
         self.s3_client.put(
             user=self.username,
@@ -54,7 +57,7 @@ class NBotContext(object):
         for link in list(set(links).difference(set(self.links))):
             logger.info("Processing the url for the user {user}, {link}".format(user=self.username, link=link))
             n_link = NBotLink(link)
-            category = self.categories[n_link.domain]
+            category = self.categories.get(n_link.domain, None)
             if category:
                 res.append(self._add_row(link=n_link, category=category))
             else:
@@ -81,15 +84,13 @@ class NBotContext(object):
             username=self.username,
             dblink=self._dblink,
             links=self.links,
-            categories=self.categories,
+            categories=self.categories.dump(),
             timestamp=int(time())
         )
 
     def __load(self, body):
         logger.info(body)
         self.username = body['username']
-        self.categories = body['categories']
+        self.categories = NBotCategoryContainer(data=body['categories'])
         self.dblink = body['dblink']
         self.links = body['links']
-
-

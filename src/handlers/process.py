@@ -13,15 +13,18 @@ logger = logging.getLogger(__name__)
 def handler_process(update, context: NBotContext):
     context.current_link = context.links.pop()
     update.message.reply_text(
-        "Process the url: {}".format(context.current_link),
+        "Process the link: {}".format(context.current_link),
         reply_markup=ReplyKeyboardMarkup([[KEYBOARD_MANUAL_KEY, KEYBOARD_AUTO_KEY]], one_time_keyboard=True),
     )
+    return CHOOSING
 
 
 @init_context
 def next_or_stop(update, context: NBotContext):
-    context.current_link = ""
+    context.clear()
     update.message.reply_text(
         "Continue?",
         reply_markup=ReplyKeyboardMarkup([[KEYBOARD_NEXT_KEY, KEYBOARD_STOP_KEY]], one_time_keyboard=True),
     )
+    return CHOOSING
+

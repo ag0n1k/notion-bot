@@ -4,7 +4,9 @@ from helpers.decorators import init_context
 from helpers.constants import *
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import ConversationHandler
+import logging
 
+logger = logging.getLogger(__name__)
 
 DOC_PATH = """
 start: handler_category
@@ -63,7 +65,9 @@ def choose_or_create_category(update, context: NBotContext):
 
 @init_context
 def set_category(update, context: NBotContext):
-    context.categories += update.message.text
-    context.categories[update.message.text] += get_domain(context.current_link)
-    update.message.reply_text("Categories updated: {}".format("\n".join(context.categories)))
+    context.categories.update(update.message.text)
+    context.categories[update.message.text].update(get_domain(context.current_link))
+    update.message.reply_text("Now re-send me the link: {}".format(context.current_link))
+    context.clear()
+    context.save()
     return ConversationHandler.END

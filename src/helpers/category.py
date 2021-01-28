@@ -4,28 +4,34 @@ logger = logging.getLogger(__name__)
 
 
 class NBotCategoryContainer(object):
-    def __init__(self):
-        self._categories = dict()
+    def __init__(self, data=None):
+        self._categories = data
 
     def __get__(self, instance, owner):
-        return self._categories
+        logger.info("Get _categories")
+        return self._categories.values()
 
-    def __set__(self, instance, value):
-        for k, v in value.items():
-            self._categories.update({k: NBotCategory(name=k, domains=v)})
+    # def __set__(self, instance, value):
+    #     for k, v in value.items():
+    #         self._categories.update({k: NBotCategory(name=k, domains=v)})
 
-    def __add__(self, name):
+    def update(self, name):
         if not self._categories.get(name, None):
+            logger.info("Adding new category: {}".format(name))
             self._categories.update({name: NBotCategory(name=name)})
 
     def __repr__(self):
-        return [str(i) for i in self._categories.values()]
+        return "\n".join([str(i) for i in self._categories.values()])
 
     def __delitem__(self, key):
         if self._categories.get(key, None):
             del self._categories[key]
 
-    def __getitem__(self, domain):
+    def __getitem__(self, key):
+        return self._categories.get(key, None)
+
+    def search(self, domain):
+        logger.info("Trying to get category for the domain: {}".format(domain))
         for name, cat in self._categories.items():
             if cat.search(domain):
                 logger.info("Category was found: {cat}".format(cat=cat.name))
@@ -33,16 +39,13 @@ class NBotCategoryContainer(object):
             logger.info("No category was found")
             return None
 
-    def update(self, category, domain):
-        cat = self._categories.get(category, None)
-        if not cat:
-            logger.info("Category not found")
-            self.add_category(category)
-            self.update(category, domain)
-        else:
-            cat += domain
-            self.save_categories()
+    def dump(self):
+        return [i.dump for i in self._categories.values()]
 
+    def update(self, name):
+        if not self._categories.get(name, None):
+            logger.info("Adding new category: {}".format(name))
+            self._categories.update({name: NBotCategory(name=name)})
 
     @property
     def names(self):
@@ -71,6 +74,12 @@ class NBotCategory(object):
         self._domains = value
 
     def __add__(self, other):
+        if not isinstance(other, list):
+            other = [other]
+        self._domains.extend(list(set(other).difference(set(self.domains))))
+
+    def update(self, other):
+        logger.info("Adding new domains: {}".format(other))
         if not isinstance(other, list):
             other = [other]
         self._domains.extend(list(set(other).difference(set(self.domains))))

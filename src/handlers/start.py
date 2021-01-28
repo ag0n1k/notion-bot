@@ -1,7 +1,8 @@
 import logging
-from helpers.decorators import init_context
 from context import NBotContext
 from helpers.constants import *
+from helpers.decorators import init_context
+from telegram.ext import ConversationHandler
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 def handler_start(update, context: NBotContext):
     if context.connected:
         update.message.reply_text("Bot successfully connected to the notion. Send me the links.")
-        return ENTRY
+        return ConversationHandler.END
     logger.info("Context not connected {}".format(SET_LINK))
     update.message.reply_text(
         "Hi, this is notion link care bot that take care of your links in notion.\n"

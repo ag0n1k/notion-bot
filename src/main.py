@@ -2,7 +2,7 @@ import os
 
 from telegram.ext import CommandHandler, CallbackQueryHandler
 
-from bot import Bot
+from bot import NBot
 from base.clients import NBotClient, NBotS3Client
 
 from handlers.start import hanlder_start
@@ -11,7 +11,7 @@ from handlers.start import hanlder_start
 
 
 if __name__ == '__main__':
-    # bot = Bot(os.environ.get('BOT_TOKEN'))
+    bot = NBot(os.environ.get('BOT_TOKEN'))
     notion_client = NBotClient(os.environ.get('NOTION_TOKEN'))
     s3_client = NBotS3Client()
     # handlers = [

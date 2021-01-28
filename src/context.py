@@ -1,4 +1,5 @@
-from base.clients import NotionBotClient
+from base.clients import NBotClient, NBotS3Client
+import json
 
 
 class NBotUser(object):
@@ -13,12 +14,17 @@ class NBotContext(object):
     categories = None
 
     def __init__(self, user: NBotUser):
-        self.client = NotionBotClient()
+        self.n_client = NBotClient(None)
+        self.s3_client = NBotS3Client()
         self.user = user
         self._dblink = None
         self.cv = None
-        self.links = set()
+        self.links = list()
         self.categories = dict()
+
+    def connect(self):
+        if self._dblink:
+            self.cv = self.n_client.connect(self._dblink)
 
     @property
     def connected(self):
@@ -37,8 +43,20 @@ class NBotContext(object):
     def dblink(self, value):
         self._dblink = value
 
+    @property
+    def __dump(self):
+        return dict(
+            user=self.user,
+            dblink=self._dblink,
+            links=self.links,
+            categories=self.categories
+        )
+
     def save(self):
-        pass
+        self.s3_client.put(
+            user=self.user,
+            value=json.dumps(self.__dump)
+        )
 
     def load(self):
         pass

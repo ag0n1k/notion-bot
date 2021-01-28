@@ -6,7 +6,7 @@ from telegram.ext import Updater
 logger = logging.getLogger(__name__)
 
 
-class Bot:
+class NBot:
     updater = None
     dispatcher = None
 

@@ -7,7 +7,7 @@ import json
 
 
 class NBotClient(NotionClient, metaclass=MetaSingleton):
-    def __init__(self, token=None):
+    def __init__(self, token):
         super().__init__(token_v2=token)
 
     def connect(self, link):

@@ -26,8 +26,7 @@ def handler_category(update, context: NBotContext):
 @init_context
 def get_categories(update, context: NBotContext):
     update.message.reply_text(
-        "The categories are: "
-        "\n".join(context.category_values),
+        "The categories are: {}".format("\n".join(context.category_values)),
         reply_markup=ReplyKeyboardRemove(),
     )
     return ConversationHandler.END

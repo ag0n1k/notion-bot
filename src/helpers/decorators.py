@@ -21,7 +21,6 @@ def init_context(func):
             context.load()
             logger.info("Connecting for the user {}".format(context.username))
             context.connect()
-            logger.info("Context saved for the user {}".format(context.username))
             bot_context.user_data['bot_context'] = context
 
         return func(update, context, *args, **kwargs)

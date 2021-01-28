@@ -1,0 +1,1 @@
+[{"name": "Video", "domains": ["youtube.com", "youtu.be"]}, {"name": "Link", "domains": ["t.me", "miro.com", "artsandculture.google.com", "", "github.com"]}, {"name": "Audio", "domains": ["music.yandex.ru", "podcasts.google.com", "devzen.ru"]}, {"name": "Movie", "domains": ["kinopoisk.ru", "imdb.com"]}, {"name": "Text", "domains": ["telegra.ph"]}]

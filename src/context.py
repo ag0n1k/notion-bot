@@ -63,9 +63,8 @@ class NBotContext(object):
     def process(self, links):
         res = []
         for link in list(set(links).difference(set(self.links))):
-            logger.info("Processing the url for the user {user}, {link}".format(user=self.username, link=link))
             n_link = NBotLink(link)
-            category = self.categories.get(n_link.domain, None)
+            category = self.categories.search(n_link.domain)
             if category:
                 res.append(self._add_row(link=n_link, category=category))
             else:

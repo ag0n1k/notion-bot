@@ -80,7 +80,7 @@ class NBotCategory(object):
         self._domains.extend(list(set(other).difference(set(self.domains))))
 
     def update(self, other):
-        logger.info("Adding new domains: {}".format(other))
+        logger.info("Updating domains {} with: {}".format(self.domains, other))
         if not isinstance(other, list):
             other = [other]
         self._domains.extend(list(set(other).difference(set(self.domains))))

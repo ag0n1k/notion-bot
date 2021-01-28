@@ -46,7 +46,6 @@ def choose_category(update, context: NBotContext):
 
 @init_context
 def remove_category(update, context: NBotContext):
-    logger.info(context.username)
     del context.categories[update.message.text]
     update.message.reply_text(
         "Category removed. Current categories: {}".format("\n".join(context.categories)),
@@ -57,7 +56,6 @@ def remove_category(update, context: NBotContext):
 
 @init_context
 def choose_or_create_category(update, context: NBotContext):
-    logger.info(context.username)
     update.message.reply_text(
         "Choose the category or send a new one.",
         reply_markup=ReplyKeyboardMarkup([context.categories.names], one_time_keyboard=True)
@@ -67,7 +65,6 @@ def choose_or_create_category(update, context: NBotContext):
 
 @init_context
 def set_category(update, context: NBotContext):
-    logger.info(context.username)
     context.categories.update(update.message.text)
     context.categories[update.message.text].update(get_domain(context.current_link))
     update.message.reply_text("Now re-send me the link: {}".format(context.current_link))

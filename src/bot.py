@@ -17,10 +17,13 @@ class NBot:
     def on_error(self, update, context):
         logger.warning(f'Update "{update}" caused error "{context.error}"')
 
-    def register_handler(self, handlers):
+    def register_handlers(self, handlers):
         for handler in handlers:
             self.dispatcher.add_handler(handler)
         self.dispatcher.add_error_handler(self.on_error)
+
+    def register_conversation(self, conversation):
+        self.dispatcher.add_handler(conversation)
 
     def start(self, *args, **kwargs):
         self.updater.start_polling(*args, **kwargs)

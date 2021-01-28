@@ -35,16 +35,10 @@ class NBotS3Client(metaclass=MetaSingleton):
         )
         self.key_template = "nbot_{user}.json"
 
-    def put(self, user, value):
+    def put(self, user, dict_value):
         return self.put_string(
             key=self.key_template.format(user=user),
-            body=json.dumps(
-                dict(
-                    user=user,
-                    timestamp=int(time.time()),
-                    value=value
-                )
-            )
+            body=json.dumps(dict_value)
         )
 
     def get(self, user):

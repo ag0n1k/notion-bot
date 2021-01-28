@@ -1,27 +1,21 @@
 import os
-
-from telegram.ext import CommandHandler, CallbackQueryHandler
-
+import logging
 from bot import NBot
 from base.clients import NBotClient, NBotS3Client
+from handlers.conversation import Conversation
 
-from handlers.start import hanlder_start
-# from handlers.submit import submit_handler
-# from handlers.play_out import play_out_handler
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+logger = logging.getLogger(__name__)
 
 
 if __name__ == '__main__':
-    bot = NBot(os.environ.get('BOT_TOKEN'))
+    bot = NBot(os.environ.get('TELEGRAM_TOKEN'))
     notion_client = NBotClient(os.environ.get('NOTION_TOKEN'))
     s3_client = NBotS3Client()
-    # handlers = [
-    #     CommandHandler('start', hanlder_start),
-    #
-        # CommandHandler('play_out', play_out_handler),
-        #
-        # CallbackQueryHandler(hanlder_start, pattern='^main$'),
-        # CallbackQueryHandler(submit_handler, pattern='^submit$')
-    # ]
-    # bot.register_handler(handlers)
-    #
-    # bot.start()
+    dialog = Conversation()
+
+    bot.register_conversation(dialog.conversation)
+    logger.info("NBot starting")
+    bot.start()

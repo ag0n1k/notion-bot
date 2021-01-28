@@ -1,6 +1,17 @@
+import logging
+from helpers.decorators import init_context
+from context import NBotContext
+from helpers.constants import *
+
+logger = logging.getLogger(__name__)
 
 
-def hanlder_start(update, context):
+@init_context
+def handler_start(update, context: NBotContext):
+    if context.connected:
+        update.message.reply_text("Bot successfully connected to the notion. Send me the links.")
+        return ENTRY
+    logger.info("Context not connected {}".format(SET_LINK))
     update.message.reply_text(
         "Hi, this is notion link care bot that take care of your links in notion.\n"
         "Okay, now we have 3 actions to be done:\n"
@@ -9,4 +20,14 @@ def hanlder_start(update, context):
         "  3) Share the link to me. Like:\n"
         "https://www.notion.so/<namespace>/<db_hash>?v=<view_hash>"
     )
-    # return init_context(update.message.chat['username'], context, update.effective_chat.id)
+    return SET_LINK
+
+
+@init_context
+def set_link(update, context: NBotContext):
+    if not context.connected:
+        context.dblink = update.message.text
+        context.connect()
+        context.save()
+    update.message.reply_text("Bot successfully connected to the notion. Send me the links.")
+    return ENTRY

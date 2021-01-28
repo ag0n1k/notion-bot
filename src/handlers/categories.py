@@ -1,5 +1,5 @@
 from base.utils import get_domain
-from context import NBotContext
+from base.context import NBotContext
 from helpers.decorators import init_context
 from helpers.constants import *
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove

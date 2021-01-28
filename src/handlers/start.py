@@ -1,5 +1,5 @@
 import logging
-from context import NBotContext
+from base.context import NBotContext
 from helpers.constants import *
 from helpers.decorators import init_context
 from telegram.ext import ConversationHandler

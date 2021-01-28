@@ -1,5 +1,5 @@
 import logging
-from context import NBotContext
+from base.context import NBotContext
 from helpers.constants import *
 
 logger = logging.getLogger(__name__)

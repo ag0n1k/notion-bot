@@ -1,7 +1,8 @@
 import logging
 from time import time
 from base.clients import NBotClient, NBotS3Client
-
+from helpers.links import NBotLink
+from helpers.category import NBotCategoryContainer, NBotCategory
 logger = logging.getLogger(__name__)
 
 
@@ -13,32 +14,12 @@ class NBotContext(object):
         self._dblink = None
         self.cv = None
         self.links = list()
-        self._categories = dict()
+        self.categories = NBotCategoryContainer()
+        self.current_link = ""
 
     def connect(self):
         if self._dblink:
             self.cv = self.n_client.connect(self._dblink)
-
-    @property
-    def categories(self):
-        return self._categories
-
-    @categories.setter
-    def categories(self, value):
-        self._categories = value
-
-    @property
-    def category_names(self):
-        return [i for i in self._categories.keys()]
-
-    @property
-    def category_values(self):
-        return [str(i) for i in self._categories.values()]
-
-    def del_category(self, name):
-        if self._categories.get(name, None):
-            del self._categories[name]
-            self.save()
 
     @property
     def connected(self):
@@ -57,23 +38,6 @@ class NBotContext(object):
     def dblink(self, value):
         self._dblink = value
 
-    @property
-    def __dump(self):
-        return dict(
-            username=self.username,
-            dblink=self._dblink,
-            links=self.links,
-            categories=self._categories,
-            timestamp=int(time())
-        )
-
-    def __load(self, body):
-        logger.info(body)
-        self.username = body['username']
-        self.categories = body['categories']
-        self.dblink = body['dblink']
-        self.links = body['links']
-
     def save(self):
         self.s3_client.put(
             user=self.username,
@@ -84,4 +48,48 @@ class NBotContext(object):
         body = self.s3_client.get(user=self.username)
         if body:
             self.__load(body)
+
+    def process(self, links):
+        res = []
+        for link in list(set(links).difference(set(self.links))):
+            logger.info("Processing the url for the user {user}, {link}".format(user=self.username, link=link))
+            n_link = NBotLink(link)
+            category = self.categories[n_link.domain]
+            if category:
+                res.append(self._add_row(link=n_link, category=category))
+            else:
+                self.links.append(link)
+                res.append(link)
+            del n_link
+        self.save()
+        return res
+
+    def _add_row(self, link: NBotLink, category: NBotCategory, status="To Do"):
+        # get the content if only the link is for auto parsing
+        link.soup()
+        row = self.row
+        row.name = link.title
+        row.url = link.link
+        row.domain = link.domain
+        row.category = category.name
+        row.status = status
+        return row.get_browseable_url()
+
+    @property
+    def __dump(self):
+        return dict(
+            username=self.username,
+            dblink=self._dblink,
+            links=self.links,
+            categories=self.categories,
+            timestamp=int(time())
+        )
+
+    def __load(self, body):
+        logger.info(body)
+        self.username = body['username']
+        self.categories = body['categories']
+        self.dblink = body['dblink']
+        self.links = body['links']
+
 

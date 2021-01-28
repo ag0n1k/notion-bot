@@ -1,21 +1,20 @@
-from urllib.parse import urlparse
+from base.utils import get_domain
 from bs4 import BeautifulSoup
 import requests
 
 
-class NBotUrl(object):
-    def __init__(self, url):
-        self.url = url
+class NBotLink(object):
+    def __init__(self, link):
+        self.link = link
         self.content = None
 
     def soup(self):
-        res = requests.get(self.url)
+        res = requests.get(self.link)
         self.content = BeautifulSoup(res.text, 'html.parser')
 
     @property
     def domain(self):
-        parsed_uri = urlparse(self.url)
-        return parsed_uri.netloc.replace('www.', '')
+        return get_domain(self.link)
 
     @property
     def title(self):

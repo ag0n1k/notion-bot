@@ -22,6 +22,7 @@ def init_context(func):
             bot_context.user_data['bot_context'] = context
         if not context.connected:
             return START
+        logger.info("{} - Call the {}".format(context.username, func.__name__))
         return func(update, context, *args, **kwargs)
 
     return wrapper

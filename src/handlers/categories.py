@@ -19,7 +19,6 @@ start: choose_or_create_category -> set_category
 
 @init_context
 def handler_category(update, context: NBotContext):
-    logger.info(context.username)
     update.message.reply_text(
         "Choose an action.",
         reply_markup=ReplyKeyboardMarkup([[KEYBOARD_GET_KEY, KEYBOARD_REMOVE_KEY]], one_time_keyboard=True)
@@ -29,9 +28,8 @@ def handler_category(update, context: NBotContext):
 
 @init_context
 def get_categories(update, context: NBotContext):
-    logger.info(context.username)
     update.message.reply_text(
-        "The categories are: {}".format("\n".join(context.categories)),
+        "The categories are:\n{}".format(context.categories),
         reply_markup=ReplyKeyboardRemove(),
     )
     return ConversationHandler.END
@@ -39,7 +37,6 @@ def get_categories(update, context: NBotContext):
 
 @init_context
 def choose_category(update, context: NBotContext):
-    logger.info(context.username)
     update.message.reply_text(
         "Choose the category to remove.",
         reply_markup=ReplyKeyboardMarkup([context.categories.names], one_time_keyboard=True)

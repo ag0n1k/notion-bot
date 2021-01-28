@@ -25,7 +25,3 @@ def next_or_stop(update, context: NBotContext):
         "Continue?",
         reply_markup=ReplyKeyboardMarkup([[KEYBOARD_NEXT_KEY, KEYBOARD_STOP_KEY]], one_time_keyboard=True),
     )
-
-@init_context
-def next_or_stop(update, context: NBotContext):
-    pass

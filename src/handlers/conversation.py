@@ -6,7 +6,8 @@ from handlers.categories import (
     set_category
 )
 from handlers.start import set_link, handler_start
-from handlers.entry import handler_entry, next_or_stop
+from handlers.entry import handler_entry
+from handlers.process import handler_process, next_or_stop
 from telegram.ext import (
     CommandHandler,
     ConversationHandler,
@@ -28,7 +29,7 @@ class Conversation:
             entry_points=[
                 CommandHandler("start", handler_start),
                 CommandHandler("category", handler_category),
-                CommandHandler("process", handler_category),
+                CommandHandler("process", handler_process),
             ],
             states={
                 START: [MessageHandler(Filters.all & (~Filters.command), handler_start)],

@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 @init_context
 def handler_start(update, context: NBotContext):
+    logger.info(context.username)
     if context.connected:
         update.message.reply_text("Bot successfully connected to the notion. Send me the links.")
         return ConversationHandler.END
@@ -26,6 +27,7 @@ def handler_start(update, context: NBotContext):
 
 @init_context
 def set_link(update, context: NBotContext):
+    logger.info(context.username)
     if not context.connected:
         context.dblink = update.message.text
         context.connect()

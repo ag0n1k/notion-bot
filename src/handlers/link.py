@@ -21,7 +21,7 @@ def get(update, context: NBotContext):
 
 
 @init_context
-def set(update, context: NBotContext):
+def set_(update, context: NBotContext):
     logger.info(context.username)
     if not context.connected:
         context.dblink = update.message.text

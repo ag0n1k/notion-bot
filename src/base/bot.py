@@ -78,8 +78,8 @@ class NBotConversation:
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_AUTO_KEY)), handlers.category.choose_create),
                     MessageHandler(Filters.all, handlers.empty.not_implemented)
                 ],
-                SET_CATEGORY: [MessageHandler(Filters.all, handlers.category.set)],
-                SET_LINK: [MessageHandler(Filters.all, handlers.link.set)],
+                SET_CATEGORY: [MessageHandler(Filters.all, handlers.category.set_)],
+                SET_LINK: [MessageHandler(Filters.all, handlers.link.set_)],
                 RM_CATEGORY: [MessageHandler(Filters.all, handlers.category.remove)],
                 RM_DOMAIN: [MessageHandler(Filters.all, handlers.domain.remove)],
             },

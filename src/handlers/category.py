@@ -37,7 +37,7 @@ def remove(update, context: NBotContext):
 
 
 @init_context
-def set(update, context: NBotContext):
+def set_(update, context: NBotContext):
     context.categories.update(update.message.text)
     context.categories[update.message.text].update(get_domain(context.current_link))
     update.message.reply_text("Now re-send me the link: {}".format(context.current_link))

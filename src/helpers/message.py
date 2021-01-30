@@ -28,7 +28,7 @@ def command_choose(update):
     update.message.reply_text(
         "Choose an action.",
         reply_markup=ReplyKeyboardMarkup(
-            [[KEYBOARD_GET_KEY, KEYBOARD_REMOVE_KEY, KEYBOARD_UPDATE_KEY]],
+            [[KEYBOARD_GET_KEY, KEYBOARD_REMOVE_KEY, KEYBOARD_UPDATE_KEY, KEYBOARD_SYNC_KEY]],
             one_time_keyboard=True)
     )
 

@@ -1,18 +1,25 @@
-import logging
-from time import time
 from base.clients import NBotClient, NBotS3Client
+from base.filters.domain import *
+from base.utils import get_domain
 from helpers.links import NBotLink
 from helpers.category import NBotCategoryContainer, NBotCategory
+from notion.collection import CollectionView
+
+from time import time
+import logging
+import traceback
+
 logger = logging.getLogger(__name__)
 
 
 class NBotContext(object):
+    cv: CollectionView
+    _dblink: str
+
     def __init__(self, username):
         self.n_client = NBotClient(None)
         self.s3_client = NBotS3Client()
         self.username = username
-        self._dblink = None
-        self.cv = None
         self.links = list()
         self.categories = NBotCategoryContainer()
         self.current_link = ""
@@ -75,6 +82,19 @@ class NBotContext(object):
             del n_link
         self.save()
         return res
+
+    def sync_domains(self):
+        query = self.cv.build_query(filter=empty_filter_params).execute()
+        res = []
+        for row in query:
+            logger.info("Updating {}".format(row.title))
+            try:
+                row.domain = get_domain(row.url)
+                res.append(row.title)
+            except Exception as err:
+                logging.error(err, exc_info=True)
+                traceback.print_tb(err.__traceback__)
+        return "Updated {} of {}".format(len(res), len(query))
 
     def _add_row(self, link: NBotLink, category: NBotCategory, status="To Do"):
         # get the content if only the link is for auto parsing

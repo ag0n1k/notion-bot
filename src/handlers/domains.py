@@ -28,3 +28,9 @@ def remove_domain(update, context: NBotContext):
     update.message.reply_text("Domain removed", reply_markup=ReplyKeyboardRemove())
     context.save()
     return ConversationHandler.END
+
+
+@init_context
+def sync_domain(update, context: NBotContext):
+    update.message.reply_text(context.sync_domains())
+    return ConversationHandler.END

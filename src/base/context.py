@@ -1,8 +1,9 @@
 from base.clients import NBotClient, NBotS3Client
-from base.filters.domain import *
+from base.filters import *
 from base.utils import get_domain
 from helpers.links import NBotLink
 from helpers.category import NBotCategoryContainer, NBotCategory
+from helpers.constants import *
 from notion.collection import CollectionView
 
 from time import time
@@ -12,15 +13,41 @@ import traceback
 logger = logging.getLogger(__name__)
 
 
-class NBotContext(object):
+class NBotCV(object):
     cv: CollectionView
+    links: list
+    sync_links: list
+
+    def sync_domains(self):
+        query = self.cv.build_query(filter=empty_property(DOMAIN_PROPERTY)).execute()
+        res = []
+        for row in query:
+            logger.info("Updating {}".format(row.title))
+            try:
+                row.domain = get_domain(row.url)
+                res.append(row.title)
+            except Exception as err:
+                logging.error(err, exc_info=True)
+                traceback.print_tb(err.__traceback__)
+        return "Updated {} of {}".format(len(res), len(query))
+
+    def sync_categories(self):
+        if not self.sync_links:
+            self.sync_links = self.cv.build_query(filter=empty_property(CATEGORY_PROPERTY)).execute()
+            logger.info("Got empty categories. Length: {}".format(len(self.sync_links)))
+
+    @property
+    def row(self):
+        return self.cv.collection.add_row()
+
+
+class NBotContext(NBotCV):
     _dblink: str
 
     def __init__(self, username):
         self.n_client = NBotClient(None)
         self.s3_client = NBotS3Client()
         self.username = username
-        self.links = list()
         self.categories = NBotCategoryContainer()
         self.current_link = ""
 
@@ -31,11 +58,6 @@ class NBotContext(object):
     @property
     def connected(self):
         return True if self.cv else False
-
-    @property
-    def row(self):
-        if self.connected:
-            return self.cv.collection.add_row()
 
     @property
     def dblink(self):
@@ -82,19 +104,6 @@ class NBotContext(object):
             del n_link
         self.save()
         return res
-
-    def sync_domains(self):
-        query = self.cv.build_query(filter=empty_filter_params).execute()
-        res = []
-        for row in query:
-            logger.info("Updating {}".format(row.title))
-            try:
-                row.domain = get_domain(row.url)
-                res.append(row.title)
-            except Exception as err:
-                logging.error(err, exc_info=True)
-                traceback.print_tb(err.__traceback__)
-        return "Updated {} of {}".format(len(res), len(query))
 
     def _add_row(self, link: NBotLink, category: NBotCategory, status="To Do"):
         # get the content if only the link is for auto parsing

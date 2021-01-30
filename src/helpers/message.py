@@ -43,3 +43,9 @@ def domain_choose(update, context, message="Choose domain."):
     update.message.reply_text(
         message, reply_markup=ReplyKeyboardMarkup([context.categories.domains], one_time_keyboard=True)
     )
+
+
+def next_choose(update, context, message="Continue?"):
+    update.message.reply_text(
+        message, reply_markup=ReplyKeyboardMarkup([[KEYBOARD_NEXT_KEY, KEYBOARD_STOP_KEY]], one_time_keyboard=True),
+    )

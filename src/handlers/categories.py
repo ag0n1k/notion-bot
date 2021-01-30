@@ -44,3 +44,9 @@ def set_category(update, context: NBotContext):
     context.clear()
     context.save()
     return ConversationHandler.END
+
+
+@init_context
+def sync_domain(update, context: NBotContext):
+    context.sync_categories()
+    return ConversationHandler.END

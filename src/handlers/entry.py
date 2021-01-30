@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 @init_context
-def handler_entry(update, context: NBotContext):
+def main(update, context: NBotContext):
     update.message.reply_text(
         "Processed links: {}".format("\n".join(context.process(get_links(update.message)))),
     )
@@ -19,6 +19,12 @@ def handler_entry(update, context: NBotContext):
 
 
 @init_context
-def handler_category(update, context: NBotContext):
+def category(update, context: NBotContext):
     choose(update=update)
     return CATEGORY
+
+
+@init_context
+def handler_domain(update, context: NBotContext):
+    choose(update=update)
+    return DOMAIN

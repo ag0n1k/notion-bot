@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 DOC_PATH = """
-start: handler_category
+start: category
   >> get: -> get_categories
   >> remove: -> choose_category -> remove_category
 

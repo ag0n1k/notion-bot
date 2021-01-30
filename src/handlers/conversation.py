@@ -5,7 +5,7 @@ from handlers.categories import (
     set_category
 )
 from handlers.start import set_link, handler_start
-from handlers.entry import handler_entry, handler_category
+from handlers.entry import main, category
 from handlers.process import handler_process, next_or_stop
 from handlers.links import handler_links, get_links
 from telegram.ext import (
@@ -28,14 +28,14 @@ class Conversation:
         self.conversation = ConversationHandler(
             entry_points=[
                 CommandHandler("start", handler_start),
-                CommandHandler("category", handler_category),
+                CommandHandler("category", category),
                 CommandHandler("process", handler_process),
                 CommandHandler("links", handler_links),
-                MessageHandler(Filters.all, handler_entry),
+                MessageHandler(Filters.all, main),
             ],
             states={
                 START: [MessageHandler(Filters.all & (~Filters.command), handler_start)],
-                ENTRY: [MessageHandler(Filters.all & (~Filters.command), handler_category)],
+                ENTRY: [MessageHandler(Filters.all & (~Filters.command), category)],
                 SET_LINK: [MessageHandler(Filters.all, set_link)],
                 CHOOSING: [
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_MANUAL_KEY)), next_or_stop),

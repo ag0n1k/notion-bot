@@ -2,7 +2,7 @@
     START,
     CHOOSING,
     ENTRY,
-    LINKS,
+    LINK,
     TYPING_CHOICE,
     SET_LINK,
     CATEGORY,

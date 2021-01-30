@@ -26,37 +26,37 @@ def done(update, context) -> int:
 
 class Conversation:
     def __init__(self, commands=("start", "categories", "links")):
-        self.conversation = ConversationHandler(
-            entry_points=[
-                CommandHandler("start", handler_start),
-                CommandHandler("category", category),
-                CommandHandler("domain", domain),
-                CommandHandler("process", handler_process),
-                CommandHandler("links", handler_links),
-                MessageHandler(Filters.all, main),
+        pass
+    self.conversation = ConversationHandler(
+        entry_points=[
+            CommandHandler("start", handler_start),
+            CommandHandler("category", category),
+            CommandHandler("domain", domain),
+            CommandHandler("process", handler_process),
+            CommandHandler("links", handler_links),
+            MessageHandler(Filters.all, main),
+        ],
+        states={
+            START: [MessageHandler(Filters.all & (~Filters.command), handler_start)],
+            CATEGORY: [
+                MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), get_categories),
+                MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY), ), choose_category),
             ],
-            states={
-                START: [MessageHandler(Filters.all & (~Filters.command), handler_start)],
-                DOMAIN: [
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), get_domains),
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY), ), choose_domain),
-                ],
-                ENTRY: [MessageHandler(Filters.all & (~Filters.command), category)],
-                SET_LINK: [MessageHandler(Filters.all, set_link)],
-                CHOOSING: [
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_MANUAL_KEY)), next_or_stop),
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_AUTO_KEY)), choose_category),
-                ],
-                LINKS: [
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), get_links),
-                ],
-                CATEGORY: [
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), get_categories),
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY), ), choose_category),
-                ],
-                SET_CATEGORY: [MessageHandler(Filters.all, set_category)],
-                RM_CATEGORY: [MessageHandler(Filters.all, remove_category)],
-                RM_DOMAIN: [MessageHandler(Filters.all, remove_domain)],
-            },
-            fallbacks=[MessageHandler(Filters.regex('^Done$'), done)],
-        )
+            DOMAIN: [
+                MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), get_domains),
+                MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY), ), choose_domain),
+            ],
+            LINK: [
+                MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), get_links),
+            ],
+            CHOOSING: [
+                MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_MANUAL_KEY)), next_or_stop),
+                MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_AUTO_KEY)), choose_category),
+            ],
+            SET_CATEGORY: [MessageHandler(Filters.all, set_category)],
+            SET_LINK: [MessageHandler(Filters.all, set_link)],
+            RM_CATEGORY: [MessageHandler(Filters.all, remove_category)],
+            RM_DOMAIN: [MessageHandler(Filters.all, remove_domain)],
+        },
+        fallbacks=[MessageHandler(Filters.regex('^Done$'), done)],
+    )

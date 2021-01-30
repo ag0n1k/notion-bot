@@ -14,7 +14,7 @@ def handler_links(update, context: NBotContext):
         "Choose an action.",
         reply_markup=ReplyKeyboardMarkup([[KEYBOARD_GET_KEY, KEYBOARD_REMOVE_KEY]], one_time_keyboard=True)
     )
-    return LINKS
+    return LINK
 
 
 @init_context

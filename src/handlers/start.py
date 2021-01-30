@@ -33,4 +33,4 @@ def set_link(update, context: NBotContext):
         context.connect()
         context.save()
     update.message.reply_text("Bot successfully connected to the notion. Send me the links.")
-    return ENTRY
+    return ConversationHandler.END

@@ -13,7 +13,7 @@ start: handler_category
   >> get: -> get_categories
   >> remove: -> choose_category -> remove_category
 
-start: choose_or_create_category -> set_category
+start: choose_category -> set_category
 """
 
 
@@ -52,15 +52,6 @@ def remove_domain(update, context: NBotContext):
         reply_markup=ReplyKeyboardRemove(),
     )
     return ConversationHandler.END
-
-
-@init_context
-def choose_or_create_category(update, context: NBotContext):
-    update.message.reply_text(
-        "Choose the category or send a new one.",
-        reply_markup=ReplyKeyboardMarkup([context.categories.names], one_time_keyboard=True)
-    )
-    return SET_CATEGORY
 
 
 @init_context

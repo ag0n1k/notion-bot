@@ -3,8 +3,7 @@ from handlers.categories import (
     get_categories,
     handler_category,
     remove_category,
-    set_category,
-    choose_or_create_category
+    set_category
 )
 from handlers.start import set_link, handler_start
 from handlers.entry import handler_entry
@@ -41,7 +40,7 @@ class Conversation:
                 SET_LINK: [MessageHandler(Filters.all, set_link)],
                 CHOOSING: [
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_MANUAL_KEY)), next_or_stop),
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_AUTO_KEY)), choose_or_create_category),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_AUTO_KEY)), choose_category),
                 ],
                 LINKS: [
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), get_links),

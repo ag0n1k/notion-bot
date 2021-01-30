@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 @init_context
 def get_categories(update, context: NBotContext):
-    update.message.reply_text(context.categories, reply_markup=ReplyKeyboardRemove())
+    update.message.reply_text("\n".join(context.categories.view), reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
 

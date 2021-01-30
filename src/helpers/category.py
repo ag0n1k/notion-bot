@@ -15,9 +15,6 @@ class NBotCategoryContainer(object):
         for k, v in value.items():
             self._categories.update({k: NBotCategory(name=k, domains=v)})
 
-    def __repr__(self):
-        return "\n".join([str(i) for i in self._categories.values()])
-
     def __delitem__(self, key):
         if self._categories.get(key, None):
             del self._categories[key]
@@ -53,6 +50,10 @@ class NBotCategoryContainer(object):
         if not self._categories.get(name, None):
             logger.info("Adding new category: {}".format(name))
             self._categories.update({name: NBotCategory(name=name)})
+
+    @property
+    def view(self):
+        return [str(i) for i in self._categories.values()]
 
     @property
     def names(self):
@@ -101,6 +102,7 @@ class NBotCategory(object):
         if not isinstance(other, list):
             other = [other]
         self._domains.extend(list(set(other).difference(set(self.domains))))
+        logger.info("Updated domains {} with: {}".format(self.domains, other))
 
     def search(self, domain: str):
         return self._name if domain in self._domains else None

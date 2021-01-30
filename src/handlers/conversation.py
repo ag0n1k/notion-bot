@@ -10,7 +10,7 @@ from handlers.empty import not_implemented
 from handlers.entry import category, domain, link, main, process
 from handlers.domain import get_domains, choose_domain, remove_domain, sync_domain
 from handlers.process import next_or_stop
-from handlers.links import get_links
+from handlers.link import get_links
 from telegram.ext import (
     CommandHandler,
     ConversationHandler,

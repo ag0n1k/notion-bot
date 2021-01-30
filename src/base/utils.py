@@ -1,3 +1,11 @@
+from urllib.parse import urlparse
+
+
+def get_domain(link):
+    parsed_uri = urlparse(link)
+    return parsed_uri.netloc.replace('www.', '')
+
+
 class MetaSingleton(type):
     _instances = {}
 

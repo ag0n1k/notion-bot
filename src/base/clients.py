@@ -1,17 +1,24 @@
+from notion.client import NotionClient
+from base.utils import MetaSingleton
 import boto3
 from botocore import exceptions as bexc
 import time
 import json
-from utils import MetaSingleton
-
-S3_TEMPLATE = "{user}_notion_bot_{value}.json"
 
 
-class NotionBotS3ClientError(Exception):
+class NBotClient(NotionClient, metaclass=MetaSingleton):
+    def __init__(self, token):
+        super().__init__(token_v2=token)
+
+    def connect(self, link):
+        return self.get_collection_view(link)
+
+
+class NBotS3ClientError(Exception):
     pass
 
 
-class NotionBotS3Client(metaclass=MetaSingleton):
+class NBotS3Client(metaclass=MetaSingleton):
     def __init__(self,
                  bucket='notion-link-care',
                  service_name='s3',
@@ -26,24 +33,19 @@ class NotionBotS3Client(metaclass=MetaSingleton):
             service_name=self.service_name,
             endpoint_url=self.endpoint_url
         )
+        self.key_template = "nbot_{user}.json"
 
-    def put(self, user, value, value_type):
+    def put(self, user, dict_value):
         return self.put_string(
-            key=S3_TEMPLATE.format(user=user, value=value_type),
-            body=json.dumps(
-                dict(
-                    user=user,
-                    timestamp=int(time.time()),
-                    value=value
-                )
-            )
+            key=self.key_template.format(user=user),
+            body=json.dumps(dict_value)
         )
 
-    def get(self, user, value_type):
-        return self.get_string(key=S3_TEMPLATE.format(user=user, value=value_type))
+    def get(self, user):
+        return self.get_string(key=self.key_template.format(user=user))
 
-    def exists(self, user, value_type='link'):
-        return self._object_exists(key=S3_TEMPLATE.format(user=user, value=value_type))
+    def exists(self, user):
+        return self._object_exists(key=self.key_template.format(user=user))
 
     def put_string(self, key, body):
         return self.client.put_object(
@@ -65,7 +67,7 @@ class NotionBotS3Client(metaclass=MetaSingleton):
         except bexc.ClientError as e:
             if e.response['Error']['Code'] == "404":
                 return False
-            raise NotionBotS3ClientError
+            raise NBotS3ClientError
         return True
 
     def _get_object(self, key):

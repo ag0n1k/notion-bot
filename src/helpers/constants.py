@@ -1,0 +1,23 @@
+(
+    START,
+    CHOOSING,
+    ENTRY,
+    LINK,
+    TYPING_CHOICE,
+    SET_LINK,
+    CATEGORY,
+    SET_CATEGORY,
+    RM_CATEGORY,
+    DOMAIN,
+    RM_DOMAIN
+) = range(11)
+
+KEYBOARD_GET_KEY = "get"
+KEYBOARD_REMOVE_KEY = "remove"
+KEYBOARD_UPDATE_KEY = "update"
+
+KEYBOARD_AUTO_KEY = "auto"
+KEYBOARD_MANUAL_KEY = "manual"
+
+KEYBOARD_NEXT_KEY = "next"
+KEYBOARD_STOP_KEY = "stop"

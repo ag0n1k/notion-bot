@@ -1,3 +1,6 @@
+from helpers.constants import *
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
+
 
 def get_links(message):
     if message.caption:
@@ -19,3 +22,12 @@ def parse_links(entities, text):
         else:
             print('got unknown type: ', entity.type)
     return res
+
+
+def choose(update):
+    update.message.reply_text(
+        "Choose an action.",
+        reply_markup=ReplyKeyboardMarkup(
+            [[KEYBOARD_GET_KEY, KEYBOARD_REMOVE_KEY, KEYBOARD_UPDATE_KEY]],
+            one_time_keyboard=True)
+    )

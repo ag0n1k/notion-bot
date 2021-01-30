@@ -1,12 +1,11 @@
 from handlers.categories import (
     choose_category,
     get_categories,
-    handler_category,
     remove_category,
     set_category
 )
 from handlers.start import set_link, handler_start
-from handlers.entry import handler_entry
+from handlers.entry import handler_entry, handler_category
 from handlers.process import handler_process, next_or_stop
 from handlers.links import handler_links, get_links
 from telegram.ext import (

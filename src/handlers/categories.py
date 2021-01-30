@@ -18,15 +18,6 @@ start: choose_category -> set_category
 
 
 @init_context
-def handler_category(update, context: NBotContext):
-    update.message.reply_text(
-        "Choose an action.",
-        reply_markup=ReplyKeyboardMarkup([[KEYBOARD_GET_KEY, KEYBOARD_REMOVE_KEY]], one_time_keyboard=True)
-    )
-    return CATEGORY
-
-
-@init_context
 def get_categories(update, context: NBotContext):
     update.message.reply_text(
         "The categories are:\n{}".format(context.categories),

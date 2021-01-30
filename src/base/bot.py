@@ -1,12 +1,13 @@
 import logging
 import base.utils
 import handlers.category
-from handlers.start import set_link, handler_start
+import handlers.entry
+import handlers.link
+# from handlers.start import set_link, handler_start
 from handlers.empty import not_implemented
-from handlers.entry import category, domain, link, main, process
+# from handlers.entry import category, domain, link, main, process
 from handlers.domain import get_domains, choose_domain, remove_domain, sync_domain
 from handlers.process import next_or_stop
-from handlers.link import get_links
 
 from helpers.constants import *
 
@@ -47,18 +48,18 @@ class NBot:
 
 
 class NBotConversation:
-    def __init__(self, commands=("start", "categories", "links")):
+    def __init__(self):
         self.conversation = ConversationHandler(
             entry_points=[
-                CommandHandler("start", handler_start),
-                CommandHandler("category", category),
-                CommandHandler("domain", domain),
-                CommandHandler("process", process),
-                CommandHandler("link", link),
-                MessageHandler(Filters.all, main),
+                CommandHandler("category", handlers.entry.category),
+                CommandHandler("domain", handlers.entry.domain),
+                CommandHandler("link", handlers.entry.link),
+                CommandHandler("process", handlers.entry.process),
+                CommandHandler("start", handlers.entry.start),
+                MessageHandler(Filters.all, handlers.entry.main),
             ],
             states={
-                START: [MessageHandler(Filters.all & (~Filters.command), handler_start)],
+                START: [MessageHandler(Filters.all & (~Filters.command), handlers.entry.start)],
                 CATEGORY: [
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), handlers.category.get),
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY), ), handlers.category.choose),
@@ -71,7 +72,7 @@ class NBotConversation:
                     MessageHandler(Filters.all, not_implemented)
                 ],
                 LINK: [
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), get_links),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), handlers.link.get),
                     MessageHandler(Filters.all, not_implemented)
                 ],
                 CHOOSING: [
@@ -80,7 +81,7 @@ class NBotConversation:
                     MessageHandler(Filters.all, not_implemented)
                 ],
                 SET_CATEGORY: [MessageHandler(Filters.all, handlers.category.set)],
-                SET_LINK: [MessageHandler(Filters.all, set_link)],
+                SET_LINK: [MessageHandler(Filters.all, handlers.link.set)],
                 RM_CATEGORY: [MessageHandler(Filters.all, handlers.category.remove)],
                 RM_DOMAIN: [MessageHandler(Filters.all, remove_domain)],
             },

@@ -46,3 +46,21 @@ def process(update, context: NBotContext):
         reply_markup=ReplyKeyboardMarkup([[KEYBOARD_MANUAL_KEY, KEYBOARD_AUTO_KEY]], one_time_keyboard=True),
     )
     return CHOOSING
+
+
+@init_context
+def start(update, context: NBotContext):
+    logger.info(context.username)
+    if context.connected:
+        update.message.reply_text("Bot successfully connected to the notion. Send me the links.")
+        return ConversationHandler.END
+    logger.info("Context not connected {}".format(SET_LINK))
+    update.message.reply_text(
+        "Hi, this is notion link care bot that take care of your links in notion.\n"
+        "Okay, now we have 3 actions to be done:\n"
+        "  1) Choose a link database (e.g. My Links)\n"
+        "  2) Add me (notion-link.care@yandex.ru) with edit permissions\n"
+        "  3) Share the link to me. Like:\n"
+        "https://www.notion.so/<namespace>/<db_hash>?v=<view_hash>"
+    )
+    return SET_LINK

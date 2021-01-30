@@ -8,7 +8,7 @@ from handlers.category import (
 from handlers.start import set_link, handler_start
 from handlers.empty import not_implemented
 from handlers.entry import category, domain, link, main, process
-from handlers.domains import get_domains, choose_domain, remove_domain, sync_domain
+from handlers.domain import get_domains, choose_domain, remove_domain, sync_domain
 from handlers.process import next_or_stop
 from handlers.links import get_links
 from telegram.ext import (

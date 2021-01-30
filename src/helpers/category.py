@@ -57,7 +57,10 @@ class NBotCategoryContainer(object):
 
     @property
     def domains(self):
-        return [i.domains for i in self._categories.values()]
+        res = []
+        for i in self._categories.values():
+            res.extend(i.domains)
+        return sorted(res)
 
 
 class NBotCategory(object):

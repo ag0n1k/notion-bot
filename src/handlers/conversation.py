@@ -5,7 +5,8 @@ from handlers.categories import (
     set_category
 )
 from handlers.start import set_link, handler_start
-from handlers.entry import main, category
+from handlers.domains import get_domains
+from handlers.entry import main, category, domain
 from handlers.process import handler_process, next_or_stop
 from handlers.links import handler_links, get_links
 from telegram.ext import (
@@ -29,12 +30,14 @@ class Conversation:
             entry_points=[
                 CommandHandler("start", handler_start),
                 CommandHandler("category", category),
+                CommandHandler("domain", domain),
                 CommandHandler("process", handler_process),
                 CommandHandler("links", handler_links),
                 MessageHandler(Filters.all, main),
             ],
             states={
                 START: [MessageHandler(Filters.all & (~Filters.command), handler_start)],
+                DOMAIN: [MessageHandler(Filters.all & (~Filters.command), get_domains)],
                 ENTRY: [MessageHandler(Filters.all & (~Filters.command), category)],
                 SET_LINK: [MessageHandler(Filters.all, set_link)],
                 CHOOSING: [

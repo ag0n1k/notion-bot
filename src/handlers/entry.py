@@ -25,6 +25,6 @@ def category(update, context: NBotContext):
 
 
 @init_context
-def handler_domain(update, context: NBotContext):
+def domain(update, context: NBotContext):
     choose(update=update)
     return DOMAIN

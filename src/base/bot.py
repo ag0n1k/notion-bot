@@ -1,3 +1,5 @@
+import logging
+import base.utils
 from handlers.category import (
     choose_category,
     get_categories,
@@ -11,22 +13,46 @@ from handlers.entry import category, domain, link, main, process
 from handlers.domain import get_domains, choose_domain, remove_domain, sync_domain
 from handlers.process import next_or_stop
 from handlers.link import get_links
+
+from helpers.constants import *
+
 from telegram.ext import (
     CommandHandler,
     ConversationHandler,
     MessageHandler,
     Filters,
+    Updater
 )
 
-from helpers.constants import *
+
+logger = logging.getLogger(__name__)
 
 
-def done(update, context) -> int:
-    update.message.reply_text("Something went wrong...")
-    return ConversationHandler.END
+class NBot:
+    updater = None
+    dispatcher = None
+
+    def __init__(self, token):
+        self.updater = Updater(token, use_context=True)
+        self.dispatcher = self.updater.dispatcher
+
+    def on_error(self, update, context):
+        logger.warning(f'Update "{update}" caused error "{context.error}"')
+
+    def register_handlers(self, handlers):
+        for handler in handlers:
+            self.dispatcher.add_handler(handler)
+        self.dispatcher.add_error_handler(self.on_error)
+
+    def register_conversation(self, conversation):
+        self.dispatcher.add_handler(conversation)
+
+    def start(self, *args, **kwargs):
+        self.updater.start_polling(*args, **kwargs)
+        self.updater.idle()
 
 
-class Conversation:
+class NBotConversation:
     def __init__(self, commands=("start", "categories", "links")):
         self.conversation = ConversationHandler(
             entry_points=[
@@ -64,5 +90,5 @@ class Conversation:
                 RM_CATEGORY: [MessageHandler(Filters.all, remove_category)],
                 RM_DOMAIN: [MessageHandler(Filters.all, remove_domain)],
             },
-            fallbacks=[MessageHandler(Filters.regex('^Done$'), done)],
+            fallbacks=[MessageHandler(Filters.regex('^Done$'), base.utils.done)],
         )

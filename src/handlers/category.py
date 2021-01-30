@@ -11,25 +11,25 @@ logger = logging.getLogger(__name__)
 
 
 @init_context
-def get_categories(update, context: NBotContext):
+def get(update, context: NBotContext):
     update.message.reply_text("\n".join(context.categories.view), reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
 
 @init_context
-def choose_category(update, context: NBotContext):
+def choose(update, context: NBotContext):
     category_choose(update, context, message="Choose the category to remove.")
     return RM_CATEGORY
 
 
 @init_context
-def choose_or_create_category(update, context: NBotContext):
+def choose_create(update, context: NBotContext):
     category_choose(update, context, message="Choose the category or send a new one.")
     return SET_CATEGORY
 
 
 @init_context
-def remove_category(update, context: NBotContext):
+def remove(update, context: NBotContext):
     del context.categories[update.message.text]
     update.message.reply_text("Category removed.", reply_markup=ReplyKeyboardRemove())
     context.save()
@@ -37,7 +37,7 @@ def remove_category(update, context: NBotContext):
 
 
 @init_context
-def set_category(update, context: NBotContext):
+def set(update, context: NBotContext):
     context.categories.update(update.message.text)
     context.categories[update.message.text].update(get_domain(context.current_link))
     update.message.reply_text("Now re-send me the link: {}".format(context.current_link))
@@ -47,6 +47,6 @@ def set_category(update, context: NBotContext):
 
 
 @init_context
-def sync_domain(update, context: NBotContext):
+def sync(update, context: NBotContext):
     context.sync_categories()
     return ConversationHandler.END

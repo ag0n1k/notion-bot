@@ -5,7 +5,7 @@ import handlers.entry
 import handlers.link
 import handlers.empty
 import handlers.domain
-from handlers.process import next_or_stop
+import handlers.process
 
 from helpers.constants import *
 
@@ -59,22 +59,22 @@ class NBotConversation:
             states={
                 START: [MessageHandler(Filters.all & (~Filters.command), handlers.entry.start)],
                 CATEGORY: [
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), handlers.category.get),
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY), ), handlers.category.choose),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY)), handlers.category.get),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY)), handlers.category.choose),
                     MessageHandler(Filters.all, handlers.empty.not_implemented)
                 ],
                 DOMAIN: [
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), handlers.domain.get),
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY), ), handlers.domain.choose),
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_SYNC_KEY), ), handlers.domain.sync),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY)), handlers.domain.get),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY)), handlers.domain.choose),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_SYNC_KEY)), handlers.domain.sync),
                     MessageHandler(Filters.all, handlers.empty.not_implemented)
                 ],
                 LINK: [
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), handlers.link.get),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY)), handlers.link.get),
                     MessageHandler(Filters.all, handlers.empty.not_implemented)
                 ],
                 CHOOSING: [
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_MANUAL_KEY)), next_or_stop),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_MANUAL_KEY)), handlers.process.next_or_stop),
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_AUTO_KEY)), handlers.category.choose_create),
                     MessageHandler(Filters.all, handlers.empty.not_implemented)
                 ],

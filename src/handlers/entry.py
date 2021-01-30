@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 @init_context
 def main(update, context: NBotContext):
     update.message.reply_text(
-        "Processed links: {}".format("\n".join(context.process(get_links(update.message)))),
+        "Processed links:\n{}".format("\n".join(context.process(get_links(update.message)))),
     )
     return ConversationHandler.END
 
@@ -42,7 +42,7 @@ def process(update, context: NBotContext):
         return ConversationHandler.END
 
     update.message.reply_text(
-        "Process the link:\n {}".format(context.current_link),
+        "Process the link:\n{}".format(context.current_link),
         reply_markup=ReplyKeyboardMarkup([[KEYBOARD_MANUAL_KEY, KEYBOARD_AUTO_KEY]], one_time_keyboard=True),
     )
     return CHOOSING

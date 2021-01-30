@@ -33,7 +33,7 @@ class Conversation:
                 CommandHandler("category", category),
                 CommandHandler("domain", domain),
                 CommandHandler("process", process),
-                CommandHandler("links", link),
+                CommandHandler("link", link),
                 MessageHandler(Filters.all, main),
             ],
             states={

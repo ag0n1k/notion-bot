@@ -47,9 +47,11 @@ class NBotContext(object):
         return True
 
     def clear(self):
+        logger.info("Clear the current state")
         self.current_link = ""
 
     def save(self):
+        logger.info("Saving the current state")
         self.s3_client.put(
             user=self.username,
             dict_value=self.__dump

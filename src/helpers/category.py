@@ -98,14 +98,13 @@ class NBotCategory(object):
         self._domains.extend(list(set(other).difference(set(self.domains))))
 
     def update(self, other):
-        logger.info("Updating domains {} with: {}".format(self.domains, other))
+        logger.debug("Updating domains {} with: {}".format(self.domains, other))
         if not isinstance(other, list):
             other = [other]
         self._domains.extend(list(set(other).difference(set(self.domains))))
-        logger.info("Updated domains {} with: {}".format(self.domains, other))
 
     def search(self, domain: str):
-        logger.info("Searching {} in {}".format(domain, self._domains))
+        logger.debug("Searching {} in {}".format(domain, self._domains))
         return self._name if domain in self._domains else None
 
     def __str__(self):

@@ -8,8 +8,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-
-
 @init_context
 def get_links(update, context: NBotContext):
     if context.links:

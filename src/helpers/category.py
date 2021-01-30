@@ -22,6 +22,9 @@ class NBotCategoryContainer(object):
         if self._categories.get(key, None):
             del self._categories[key]
 
+    def remove_domain(self, domain):
+        self.search(domain).domains.remove(domain)
+
     def __getitem__(self, key):
         return self._categories.get(key, None)
 
@@ -51,6 +54,10 @@ class NBotCategoryContainer(object):
     @property
     def names(self):
         return [i for i in self._categories.keys()]
+
+    @property
+    def domains(self):
+        return [i.domains for i in self._categories.values()]
 
 
 class NBotCategory(object):

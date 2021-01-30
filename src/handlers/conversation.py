@@ -1,4 +1,4 @@
-from handlers.categories import (
+from handlers.category import (
     choose_category,
     get_categories,
     remove_category,

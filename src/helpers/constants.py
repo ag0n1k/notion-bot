@@ -9,8 +9,9 @@
     SET_CATEGORY,
     RM_CATEGORY,
     DOMAIN,
-    RM_DOMAIN
-) = range(11)
+    RM_DOMAIN,
+    UPDATE_CATEGORY,
+) = range(12)
 
 KEYBOARD_GET_KEY = "get"
 KEYBOARD_REMOVE_KEY = "remove"

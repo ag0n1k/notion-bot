@@ -4,7 +4,7 @@ from base.utils import get_domain
 from helpers.links import NBotLink
 from helpers.category import NBotCategoryContainer, NBotCategory
 from helpers.constants import *
-from notion.collection import CollectionView
+from notion.collection import CollectionView, CollectionRowBlock
 
 from time import time
 import logging
@@ -32,9 +32,8 @@ class NBotCV(object):
         return "Updated {} of {}".format(len(res), len(query))
 
     def sync_categories(self):
-        if not self.sync_links:
-            self.sync_links = self.cv.build_query(filter=empty_property(CATEGORY_PROPERTY)).execute()
-            logger.info("Got empty categories. Length: {}".format(len(self.sync_links)))
+        self.sync_links = self.cv.build_query(filter=empty_property(CATEGORY_PROPERTY),).execute()
+        logger.info("Got empty categories. Length: {}".format(len(self.sync_links)))
 
     @property
     def row(self):
@@ -43,8 +42,10 @@ class NBotCV(object):
 
 class NBotContext(NBotCV):
     _dblink: str
+    current_sync_link: CollectionRowBlock
 
     def __init__(self, username):
+        super().__init__()
         self.n_client = NBotClient(None)
         self.s3_client = NBotS3Client()
         self.username = username
@@ -66,6 +67,13 @@ class NBotContext(NBotCV):
     @dblink.setter
     def dblink(self, value):
         self._dblink = value
+
+    @property
+    def last_sync_link(self):
+        if self.sync_links:
+            self.current_sync_link = self.sync_links[0]
+            return True
+        return False
 
     @property
     def last_link(self):
@@ -115,6 +123,7 @@ class NBotContext(NBotCV):
         row.category = category.name
         row.status = status
         return row.get_browseable_url()
+
 
     @property
     def __dump(self):

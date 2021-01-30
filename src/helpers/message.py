@@ -49,3 +49,10 @@ def next_choose(update, context, message="Continue?"):
     update.message.reply_text(
         message, reply_markup=ReplyKeyboardMarkup([[KEYBOARD_NEXT_KEY, KEYBOARD_STOP_KEY]], one_time_keyboard=True),
     )
+
+
+def process_link(update, context, link):
+    update.message.reply_text(
+        "Process the link:\n{}".format(link),
+        reply_markup=ReplyKeyboardMarkup([[KEYBOARD_MANUAL_KEY, KEYBOARD_AUTO_KEY]], one_time_keyboard=True),
+    )

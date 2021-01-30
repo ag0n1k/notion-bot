@@ -61,6 +61,7 @@ class NBotConversation:
                 CATEGORY: [
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY)), handlers.category.get),
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY)), handlers.category.choose),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_SYNC_KEY)), handlers.category.sync),
                     MessageHandler(Filters.all, handlers.empty.not_implemented)
                 ],
                 DOMAIN: [
@@ -76,8 +77,10 @@ class NBotConversation:
                 CHOOSING: [
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_MANUAL_KEY)), handlers.process.next_or_stop),
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_AUTO_KEY)), handlers.category.choose_create),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_NEXT_KEY)), handlers.entry.process),
                     MessageHandler(Filters.all, handlers.empty.not_implemented)
                 ],
+                UPDATE_CATEGORY: [MessageHandler(Filters.all, handlers.category.update_)],
                 SET_CATEGORY: [MessageHandler(Filters.all, handlers.category.set_)],
                 SET_LINK: [MessageHandler(Filters.all, handlers.link.set_)],
                 RM_CATEGORY: [MessageHandler(Filters.all, handlers.category.remove)],

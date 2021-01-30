@@ -1,7 +1,7 @@
 from base.context import NBotContext
 from helpers.constants import *
 from helpers.decorators import init_context
-from helpers.message import get_links, command_choose
+from helpers.message import get_links, command_choose, process_link
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import ConversationHandler
 import logging
@@ -41,10 +41,7 @@ def process(update, context: NBotContext):
         update.message.reply_text("No links to process!")
         return ConversationHandler.END
 
-    update.message.reply_text(
-        "Process the link:\n{}".format(context.current_link),
-        reply_markup=ReplyKeyboardMarkup([[KEYBOARD_MANUAL_KEY, KEYBOARD_AUTO_KEY]], one_time_keyboard=True),
-    )
+    process_link(update, context, link=context.current_link)
     return CHOOSING
 
 

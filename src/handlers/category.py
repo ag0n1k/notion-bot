@@ -49,4 +49,21 @@ def set_(update, context: NBotContext):
 @init_context
 def sync(update, context: NBotContext):
     context.sync_categories()
+    if not context.last_sync_link:
+        update.message.reply_text("No links to process!")
+        return ConversationHandler.END
+    update.message.reply_text(
+        "Current processable links = {}.\n{}".format(len(context.sync_links), context.current_sync_link.url))
+    category_choose(update, context)
+    return UPDATE_CATEGORY
+
+
+@init_context
+def update_(update, context: NBotContext):
+    context.categories.update(update.message.text)
+    context.categories[update.message.text].update(get_domain(context.current_sync_link.url))
+    context.current_sync_link.category = update.message.text
+    update.message.reply_text("Updated:\n{}".format(context.current_sync_link.get_browseable_url()))
+    context.clear()
+    context.save()
     return ConversationHandler.END

@@ -8,13 +8,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-@init_context
-def handler_links(update, context: NBotContext):
-    update.message.reply_text(
-        "Choose an action.",
-        reply_markup=ReplyKeyboardMarkup([[KEYBOARD_GET_KEY, KEYBOARD_REMOVE_KEY]], one_time_keyboard=True)
-    )
-    return LINK
 
 
 @init_context

@@ -1,5 +1,5 @@
 from helpers.constants import *
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import ReplyKeyboardMarkup
 
 
 def get_links(message):
@@ -24,10 +24,22 @@ def parse_links(entities, text):
     return res
 
 
-def choose(update):
+def command_choose(update):
     update.message.reply_text(
         "Choose an action.",
         reply_markup=ReplyKeyboardMarkup(
             [[KEYBOARD_GET_KEY, KEYBOARD_REMOVE_KEY, KEYBOARD_UPDATE_KEY]],
             one_time_keyboard=True)
+    )
+
+
+def category_choose(update, context, message="Choose category."):
+    update.message.reply_text(
+        message, reply_markup=ReplyKeyboardMarkup([context.categories.names], one_time_keyboard=True)
+    )
+
+
+def domain_choose(update, context, message="Choose domain."):
+    update.message.reply_text(
+        message, reply_markup=ReplyKeyboardMarkup([context.categories.domains], one_time_keyboard=True)
     )

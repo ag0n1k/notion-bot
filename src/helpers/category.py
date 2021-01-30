@@ -27,8 +27,6 @@ class NBotCategoryContainer(object):
         if cat:
             logger.info("Removing '{}' from category '{}'".format(domain, cat.name))
             cat.remove(domain)
-            return True
-        return False
 
     def __getitem__(self, key):
         return self._categories.get(key, None)

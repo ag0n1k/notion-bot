@@ -3,9 +3,7 @@ import base.utils
 import handlers.category
 import handlers.entry
 import handlers.link
-# from handlers.start import set_link, handler_start
-from handlers.empty import not_implemented
-# from handlers.entry import category, domain, link, main, process
+import handlers.empty
 from handlers.domain import get_domains, choose_domain, remove_domain, sync_domain
 from handlers.process import next_or_stop
 
@@ -63,22 +61,22 @@ class NBotConversation:
                 CATEGORY: [
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), handlers.category.get),
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY), ), handlers.category.choose),
-                    MessageHandler(Filters.all, not_implemented)
+                    MessageHandler(Filters.all, handlers.empty.not_implemented)
                 ],
                 DOMAIN: [
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), get_domains),
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY), ), choose_domain),
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_SYNC_KEY), ), sync_domain),
-                    MessageHandler(Filters.all, not_implemented)
+                    MessageHandler(Filters.all, handlers.empty.not_implemented)
                 ],
                 LINK: [
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), handlers.link.get),
-                    MessageHandler(Filters.all, not_implemented)
+                    MessageHandler(Filters.all, handlers.empty.not_implemented)
                 ],
                 CHOOSING: [
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_MANUAL_KEY)), next_or_stop),
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_AUTO_KEY)), handlers.category.choose_create),
-                    MessageHandler(Filters.all, not_implemented)
+                    MessageHandler(Filters.all, handlers.empty.not_implemented)
                 ],
                 SET_CATEGORY: [MessageHandler(Filters.all, handlers.category.set)],
                 SET_LINK: [MessageHandler(Filters.all, handlers.link.set)],

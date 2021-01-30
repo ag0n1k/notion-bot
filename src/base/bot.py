@@ -4,7 +4,7 @@ import handlers.category
 import handlers.entry
 import handlers.link
 import handlers.empty
-from handlers.domain import get_domains, choose_domain, remove_domain, sync_domain
+import handlers.domain
 from handlers.process import next_or_stop
 
 from helpers.constants import *
@@ -64,9 +64,9 @@ class NBotConversation:
                     MessageHandler(Filters.all, handlers.empty.not_implemented)
                 ],
                 DOMAIN: [
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), get_domains),
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY), ), choose_domain),
-                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_SYNC_KEY), ), sync_domain),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), handlers.domain.get),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY), ), handlers.domain.choose),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_SYNC_KEY), ), handlers.domain.sync),
                     MessageHandler(Filters.all, handlers.empty.not_implemented)
                 ],
                 LINK: [
@@ -81,7 +81,7 @@ class NBotConversation:
                 SET_CATEGORY: [MessageHandler(Filters.all, handlers.category.set)],
                 SET_LINK: [MessageHandler(Filters.all, handlers.link.set)],
                 RM_CATEGORY: [MessageHandler(Filters.all, handlers.category.remove)],
-                RM_DOMAIN: [MessageHandler(Filters.all, remove_domain)],
+                RM_DOMAIN: [MessageHandler(Filters.all, handlers.domain.remove)],
             },
             fallbacks=[MessageHandler(Filters.regex('^Done$'), base.utils.done)],
         )

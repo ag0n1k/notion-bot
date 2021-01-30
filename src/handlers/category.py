@@ -67,3 +67,9 @@ def update_(update, context: NBotContext):
     context.clear()
     context.save()
     return ConversationHandler.END
+
+
+@init_context
+def sync_update(update, context: NBotContext):
+    update.message.reply_text(context.get_all_categories_domains())
+    return ConversationHandler.END

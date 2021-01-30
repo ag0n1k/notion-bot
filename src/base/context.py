@@ -35,6 +35,19 @@ class NBotCV(object):
         self.sync_links = self.cv.build_query(filter=empty_property(CATEGORY_PROPERTY),).execute()
         logger.info("Got empty categories. Length: {}".format(len(self.sync_links)))
 
+    def get_all_categories_domains(self):
+        res = {}
+        for i in self.cv.collection.get_rows():
+            cur = res.get(i.category, None)
+            if not cur:
+                cur = set()
+            cur.add(i.domain)
+            res.update({i.category: cur})
+        res_ = []
+        for k, v in res.items():
+            res_.append("{}: {}".format(k, list(v)))
+        return "\n".join(res_)
+
     @property
     def row(self):
         return self.cv.collection.add_row()

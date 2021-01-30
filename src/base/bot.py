@@ -62,6 +62,7 @@ class NBotConversation:
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY)), handlers.category.get),
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY)), handlers.category.choose),
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_SYNC_KEY)), handlers.category.sync),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_UPDATE_KEY)), handlers.category.sync_update),
                     MessageHandler(Filters.all, handlers.empty.not_implemented)
                 ],
                 DOMAIN: [

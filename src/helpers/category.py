@@ -23,7 +23,12 @@ class NBotCategoryContainer(object):
             del self._categories[key]
 
     def remove_domain(self, domain):
-        self.search(domain).domains.remove(domain)
+        cat = self.search(domain)
+        if cat:
+            logger.info("Removing '{}' from category '{}'".format(domain, cat.name))
+            cat.remove(domain)
+            return True
+        return False
 
     def __getitem__(self, key):
         return self._categories.get(key, None)
@@ -83,6 +88,10 @@ class NBotCategory(object):
     @domains.setter
     def domains(self, value):
         self._domains = value
+
+    def remove(self, domain):
+        logger.info("Removing {} from {}".format(domain, self._domains))
+        self._domains.remove(domain)
 
     def __add__(self, other):
         if not isinstance(other, list):

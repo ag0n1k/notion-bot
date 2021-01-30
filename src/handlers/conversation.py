@@ -5,7 +5,7 @@ from handlers.categories import (
     set_category
 )
 from handlers.start import set_link, handler_start
-from handlers.domains import get_domains
+from handlers.domains import get_domains, choose_domain, remove_domain
 from handlers.entry import main, category, domain
 from handlers.process import handler_process, next_or_stop
 from handlers.links import handler_links, get_links
@@ -37,7 +37,10 @@ class Conversation:
             ],
             states={
                 START: [MessageHandler(Filters.all & (~Filters.command), handler_start)],
-                DOMAIN: [MessageHandler(Filters.all & (~Filters.command), get_domains)],
+                DOMAIN: [
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY), ), get_domains),
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY), ), choose_domain),
+                ],
                 ENTRY: [MessageHandler(Filters.all & (~Filters.command), category)],
                 SET_LINK: [MessageHandler(Filters.all, set_link)],
                 CHOOSING: [
@@ -53,6 +56,7 @@ class Conversation:
                 ],
                 SET_CATEGORY: [MessageHandler(Filters.all, set_category)],
                 RM_CATEGORY: [MessageHandler(Filters.all, remove_category)],
+                RM_DOMAIN: [MessageHandler(Filters.all, remove_domain)],
             },
             fallbacks=[MessageHandler(Filters.regex('^Done$'), done)],
         )

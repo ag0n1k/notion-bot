@@ -14,7 +14,6 @@ def main(update, context: NBotContext):
     update.message.reply_text(
         "Processed links: {}".format("\n".join(context.process(get_links(update.message)))),
     )
-    logger.info("Processed the message for the user: {}".format(context.username))
     return ConversationHandler.END
 
 

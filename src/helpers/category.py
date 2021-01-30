@@ -34,8 +34,8 @@ class NBotCategoryContainer(object):
             if cat.search(domain):
                 logger.info("Category was found: {cat}".format(cat=cat.name))
                 return cat
-            logger.info("No category was found")
-            return None
+        logger.info("No category was found")
+        return None
 
     def dump(self):
         return [i.dump for i in self._categories.values()]
@@ -105,6 +105,7 @@ class NBotCategory(object):
         logger.info("Updated domains {} with: {}".format(self.domains, other))
 
     def search(self, domain: str):
+        logger.info("Searching {} in {}".format(domain, self._domains))
         return self._name if domain in self._domains else None
 
     def __str__(self):

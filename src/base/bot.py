@@ -87,6 +87,9 @@ class NBotConversation:
                     MessageHandler(Filters.all, handlers.empty.not_implemented)
                 ],
                 UPDATE_CATEGORY: [MessageHandler(Filters.all, handlers.category.update_)],
+                GET_STATUS: [
+                    MessageHandler(Filters.all, handlers.status.rand),
+                ],
                 SET_CATEGORY: [MessageHandler(Filters.all, handlers.category.set_)],
                 SET_LINK: [MessageHandler(Filters.all, handlers.link.set_)],
                 RM_CATEGORY: [MessageHandler(Filters.all, handlers.category.remove)],

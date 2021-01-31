@@ -9,6 +9,7 @@ from notion.collection import CollectionView, CollectionRowBlock
 from time import time
 import logging
 import traceback
+from random import randint
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,10 @@ class NBotCV(object):
         self.sync_links = self.cv.build_query(filter=empty_property(CATEGORY_STATUS)).execute()
         logger.info("Got empty categories. Length: {}".format(len(self.sync_links)))
 
+    def get_rand(self, category):
+        query = self.cv.build_query(filter=category_todo(category)).execute()
+        return query[randint(0, len(query) - 1)].get_browseable_url()
+
     def get_all_categories_domains(self):
         res = {}
         for i in self.cv.collection.get_rows():
@@ -82,8 +87,8 @@ class NBotContext(NBotCV):
     def connect(self):
         if self._dblink:
             self.cv = self.n_client.connect(self._dblink)
-            self.statuses = self._get_statuses()
-            logger.info(self.statuses)
+            if not hasattr(self, 'statuses'):
+                self.statuses = self._get_statuses()
 
     @property
     def connected(self):
@@ -126,7 +131,10 @@ class NBotContext(NBotCV):
     def load(self):
         body = self.s3_client.get(user=self.username)
         if body:
-            self.__load(body)
+            try:
+                self.__load(body)
+            except KeyError as err:
+                logging.error("Got error on load", exc_info=True)
 
     def process(self, links):
         res = []
@@ -153,7 +161,6 @@ class NBotContext(NBotCV):
         row.status = status
         return row.get_browseable_url()
 
-
     @property
     def __dump(self):
         return dict(
@@ -161,6 +168,7 @@ class NBotContext(NBotCV):
             dblink=self._dblink,
             links=self.links,
             categories=self.categories.dump(),
+            statuses=self.statuses,
             timestamp=int(time())
         )
 
@@ -170,3 +178,4 @@ class NBotContext(NBotCV):
         self.categories.load(body['categories'])
         self.dblink = body['dblink']
         self.links = body['links']
+        self.statuses = body['statuses']

@@ -1,8 +1,7 @@
 from base.context import NBotContext
-from helpers.constants import *
+from base.constants import *
 from helpers.decorators import init_context
 from helpers.message import get_links, command_choose, process_link
-from telegram import ReplyKeyboardMarkup
 from telegram.ext import ConversationHandler
 import logging
 

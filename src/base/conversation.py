@@ -7,7 +7,7 @@ import handlers.link
 import handlers.process
 import handlers.status
 
-from helpers.constants import *
+from base.constants import *
 
 from telegram.ext import (
     CommandHandler,

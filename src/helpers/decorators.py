@@ -1,6 +1,6 @@
 import logging
 from base.context import NBotContext
-from helpers.constants import *
+from base.constants import *
 
 logger = logging.getLogger(__name__)
 

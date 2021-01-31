@@ -1,7 +1,7 @@
 from base.context import NBotContext
 from helpers.decorators import init_context
 from helpers.message import next_choose
-from helpers.constants import *
+from base.constants import *
 import logging
 
 logger = logging.getLogger(__name__)

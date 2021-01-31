@@ -3,7 +3,7 @@ from base.filters import *
 from base.utils import get_domain
 from base.link import NBotLink
 from base.category import NBotCategoryContainer, NBotCategory
-from helpers.constants import *
+from base.constants import *
 from notion.collection import CollectionView, CollectionRowBlock
 
 from time import time

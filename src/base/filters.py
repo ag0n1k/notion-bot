@@ -1,4 +1,4 @@
-from helpers.constants import *
+from base.constants import *
 
 
 def empty_property(prop):

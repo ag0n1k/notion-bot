@@ -1,8 +1,7 @@
 from helpers.decorators import init_context
 from base.context import NBotContext
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import ReplyKeyboardRemove
 from telegram.ext import ConversationHandler
-from helpers.constants import *
 import logging
 
 logger = logging.getLogger(__name__)

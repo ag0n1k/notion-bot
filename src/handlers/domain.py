@@ -1,7 +1,7 @@
 from base.context import NBotContext
 from helpers.message import domain_choose
 from helpers.decorators import init_context
-from helpers.constants import *
+from base.constants import *
 from telegram import ReplyKeyboardRemove
 from telegram.ext import ConversationHandler
 import logging

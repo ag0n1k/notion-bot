@@ -1,11 +1,11 @@
-from base.utils import get_domain
+from base.utils import get_domain, check_http_in_link
 from bs4 import BeautifulSoup
 import requests
 
 
 class NBotLink(object):
     def __init__(self, link):
-        self.link = link
+        self.link = check_http_in_link(link)
         self.content = None
 
     def soup(self):

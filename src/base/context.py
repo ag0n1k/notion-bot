@@ -1,8 +1,8 @@
 from base.clients import NBotClient, NBotS3Client
 from base.filters import *
 from base.utils import get_domain
-from helpers.links import NBotLink
-from helpers.category import NBotCategoryContainer, NBotCategory
+from base.link import NBotLink
+from base.category import NBotCategoryContainer, NBotCategory
 from helpers.constants import *
 from notion.collection import CollectionView, CollectionRowBlock
 

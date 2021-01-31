@@ -7,6 +7,11 @@ def get_domain(link):
     return parsed_uri.netloc.replace('www.', '')
 
 
+def get_path(link):
+    parsed_uri = urlparse(link)
+    return parsed_uri.path
+
+
 def check_http_in_link(link):
     if not link.startswith('http'):
         return 'http://' + link

@@ -1,6 +1,7 @@
 import os
 import logging
-from base.bot import NBot, NBotConversation
+from base.bot import NBot
+from base.conversation import NBotConversation
 from base.clients import NBotClient, NBotS3Client
 
 logging.basicConfig(level=logging.INFO,

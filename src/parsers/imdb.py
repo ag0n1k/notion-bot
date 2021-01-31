@@ -5,7 +5,7 @@ from base.utils import MetaSingleton
 logger = logging.getLogger(__name__)
 
 
-class NBotIMDB(object, metaclass=MetaSingleton):
+class NBotIMDBClient(object, metaclass=MetaSingleton):
     url = 'http://www.omdbapi.com'
 
     def __init__(self, api_key, timeout=5):

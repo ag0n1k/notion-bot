@@ -2,12 +2,15 @@ from notion.client import NotionClient
 from base.utils import MetaSingleton
 import boto3
 from botocore import exceptions as bexc
-import time
 import json
+import requests
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class NBotClient(NotionClient, metaclass=MetaSingleton):
-    def __init__(self, token):
+    def __init__(self, token=None):
         super().__init__(token_v2=token)
 
     def connect(self, link):
@@ -74,3 +77,26 @@ class NBotS3Client(metaclass=MetaSingleton):
         if self._object_exists(key):
             return self.client.get_object(Bucket=self.bucket, Key=key)
         return None
+
+
+class NBotOMDBClient(object, metaclass=MetaSingleton):
+    url = 'http://www.omdbapi.com'
+
+    def __init__(self, api_key, timeout=5):
+        self.session = requests.Session()
+        self.key = api_key
+        self.timeout = timeout
+
+    def get(self, imdb_id):
+        logger.info("Getting the {}".format(imdb_id))
+        res = self.session.get(self.url,
+                               params=dict(
+                                   apikey=self.key,
+                                   i=imdb_id
+                               ),
+                               timeout=self.timeout)
+        res.raise_for_status()
+        logger.info(res)
+        logger.info(res.json())
+        logger.info(res.content)
+        return res

@@ -142,8 +142,10 @@ class NBotContext(NBotCV):
             n_link = NBotLink(link)
             category = self.categories.search(n_link.domain)
             if category:
+                logger.info("Saving {} to notion".format(link))
                 res.append(self._add_row(link=n_link, category=category))
             else:
+                logger.info("Saving {} for process".format(link))
                 self.links.append(link)
                 res.append(link)
             del n_link

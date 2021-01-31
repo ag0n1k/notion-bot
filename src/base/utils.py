@@ -8,7 +8,7 @@ def get_domain(link):
 
 
 def check_http_in_link(link):
-    if not link.startswith('http://'):
+    if not link.startswith('http'):
         return 'http://' + link
     return link
 

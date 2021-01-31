@@ -1,11 +1,12 @@
 import logging
 import base.utils
 import handlers.category
+import handlers.domain
+import handlers.empty
 import handlers.entry
 import handlers.link
-import handlers.empty
-import handlers.domain
 import handlers.process
+import handlers.status
 
 from helpers.constants import *
 
@@ -54,6 +55,7 @@ class NBotConversation:
                 CommandHandler("link", handlers.entry.link),
                 CommandHandler("process", handlers.entry.process),
                 CommandHandler("start", handlers.entry.start),
+                CommandHandler("status", handlers.entry.status),
                 MessageHandler(Filters.all, handlers.entry.main),
             ],
             states={
@@ -74,6 +76,9 @@ class NBotConversation:
                 LINK: [
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY)), handlers.link.get),
                     MessageHandler(Filters.all, handlers.empty.not_implemented)
+                ],
+                STATUS: [
+                    MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY)), handlers.status.get),
                 ],
                 CHOOSING: [
                     MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_MANUAL_KEY)), handlers.process.next_or_stop),

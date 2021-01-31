@@ -36,6 +36,12 @@ def link(update, context: NBotContext):
 
 
 @init_context
+def status(update, context: NBotContext):
+    command_choose(update=update)
+    return STATUS
+
+
+@init_context
 def process(update, context: NBotContext):
     if not context.last_link:
         update.message.reply_text("No links to process!")

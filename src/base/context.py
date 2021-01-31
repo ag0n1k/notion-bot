@@ -32,7 +32,20 @@ class NBotCV(object):
         return "Updated {} of {}".format(len(res), len(query))
 
     def sync_categories(self):
-        self.sync_links = self.cv.build_query(filter=empty_property(CATEGORY_PROPERTY),).execute()
+        self.sync_links = self.cv.build_query(filter=empty_property(CATEGORY_PROPERTY)).execute()
+        logger.info("Got empty categories. Length: {}".format(len(self.sync_links)))
+
+    def _get_statuses(self):
+        res = set()
+        for i in self.cv.collection.get_rows():
+            if i.status:
+                res.add(i.status)
+            else:
+                i.status = STATUS_TODO
+        return list(res)
+
+    def sync_statuses(self):
+        self.sync_links = self.cv.build_query(filter=empty_property(CATEGORY_STATUS)).execute()
         logger.info("Got empty categories. Length: {}".format(len(self.sync_links)))
 
     def get_all_categories_domains(self):
@@ -56,6 +69,7 @@ class NBotCV(object):
 class NBotContext(NBotCV):
     _dblink: str
     current_sync_link: CollectionRowBlock
+    statuses: list
 
     def __init__(self, username):
         super().__init__()
@@ -68,6 +82,8 @@ class NBotContext(NBotCV):
     def connect(self):
         if self._dblink:
             self.cv = self.n_client.connect(self._dblink)
+            self.statuses = self._get_statuses()
+            logger.info(self.statuses)
 
     @property
     def connected(self):
@@ -126,7 +142,7 @@ class NBotContext(NBotCV):
         self.save()
         return res
 
-    def _add_row(self, link: NBotLink, category: NBotCategory, status="To Do"):
+    def _add_row(self, link: NBotLink, category: NBotCategory, status=STATUS_TODO):
         # get the content if only the link is for auto parsing
         link.soup()
         row = self.row

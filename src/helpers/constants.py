@@ -11,7 +11,8 @@
     DOMAIN,
     RM_DOMAIN,
     UPDATE_CATEGORY,
-) = range(12)
+    STATUS,
+) = range(13)
 
 KEYBOARD_GET_KEY = "get"
 KEYBOARD_REMOVE_KEY = "remove"
@@ -26,3 +27,6 @@ KEYBOARD_STOP_KEY = "stop"
 
 CATEGORY_PROPERTY = "Category"
 DOMAIN_PROPERTY = "Domain"
+CATEGORY_STATUS = "Status"
+
+STATUS_TODO = "To Do"

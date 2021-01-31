@@ -1,7 +1,7 @@
 from base.context import NBotContext
 from helpers.constants import *
 from helpers.decorators import init_context
-from helpers.message import get_links, command_choose
+from helpers.message import get_links, command_choose, process_link
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import ConversationHandler
 import logging
@@ -36,13 +36,34 @@ def link(update, context: NBotContext):
 
 
 @init_context
+def status(update, context: NBotContext):
+    command_choose(update=update)
+    return STATUS
+
+
+@init_context
 def process(update, context: NBotContext):
     if not context.last_link:
         update.message.reply_text("No links to process!")
         return ConversationHandler.END
 
-    update.message.reply_text(
-        "Process the link:\n{}".format(context.current_link),
-        reply_markup=ReplyKeyboardMarkup([[KEYBOARD_MANUAL_KEY, KEYBOARD_AUTO_KEY]], one_time_keyboard=True),
-    )
+    process_link(update, context, link=context.current_link)
     return CHOOSING
+
+
+@init_context
+def start(update, context: NBotContext):
+    logger.info(context.username)
+    if context.connected:
+        update.message.reply_text("Bot successfully connected to the notion. Send me the links.")
+        return ConversationHandler.END
+    logger.info("Context not connected {}".format(SET_LINK))
+    update.message.reply_text(
+        "Hi, this is notion link care bot that take care of your links in notion.\n"
+        "Okay, now we have 3 actions to be done:\n"
+        "  1) Choose a link database (e.g. My Links)\n"
+        "  2) Add me (notion-link.care@yandex.ru) with edit permissions\n"
+        "  3) Share the link to me. Like:\n"
+        "https://www.notion.so/<namespace>/<db_hash>?v=<view_hash>"
+    )
+    return SET_LINK

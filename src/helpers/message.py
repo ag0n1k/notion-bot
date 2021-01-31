@@ -28,7 +28,7 @@ def command_choose(update):
     update.message.reply_text(
         "Choose an action.",
         reply_markup=ReplyKeyboardMarkup(
-            [[KEYBOARD_GET_KEY, KEYBOARD_REMOVE_KEY, KEYBOARD_UPDATE_KEY]],
+            [[KEYBOARD_GET_KEY, KEYBOARD_REMOVE_KEY, KEYBOARD_UPDATE_KEY, KEYBOARD_SYNC_KEY]],
             one_time_keyboard=True)
     )
 
@@ -42,4 +42,23 @@ def category_choose(update, context, message="Choose category."):
 def domain_choose(update, context, message="Choose domain."):
     update.message.reply_text(
         message, reply_markup=ReplyKeyboardMarkup([context.categories.domains], one_time_keyboard=True)
+    )
+
+
+def status_choose(update, context, message="Choose Status."):
+    update.message.reply_text(
+        message, reply_markup=ReplyKeyboardMarkup([context.statuses.domains], one_time_keyboard=True)
+    )
+
+
+def next_choose(update, context, message="Continue?"):
+    update.message.reply_text(
+        message, reply_markup=ReplyKeyboardMarkup([[KEYBOARD_NEXT_KEY, KEYBOARD_STOP_KEY]], one_time_keyboard=True),
+    )
+
+
+def process_link(update, context, link):
+    update.message.reply_text(
+        "Process the link:\n{}".format(link),
+        reply_markup=ReplyKeyboardMarkup([[KEYBOARD_MANUAL_KEY, KEYBOARD_AUTO_KEY]], one_time_keyboard=True),
     )

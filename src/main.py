@@ -1,8 +1,7 @@
 import os
 import logging
-from bot import NBot
+from base.bot import NBot, NBotConversation
 from base.clients import NBotClient, NBotS3Client
-from handlers.conversation import Conversation
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -14,7 +13,7 @@ if __name__ == '__main__':
     bot = NBot(os.environ.get('TELEGRAM_TOKEN'))
     notion_client = NBotClient(os.environ.get('NOTION_TOKEN'))
     s3_client = NBotS3Client()
-    dialog = Conversation()
+    dialog = NBotConversation()
 
     bot.register_conversation(dialog.conversation)
     logger.info("NBot starting")

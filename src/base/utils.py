@@ -1,3 +1,4 @@
+import abc
 from urllib.parse import urlparse
 from telegram.ext import ConversationHandler
 
@@ -25,6 +26,21 @@ class MetaSingleton(type):
         if cls not in cls._instances:
             cls._instances[cls] = super(MetaSingleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
+
+
+class NBotDBInterface(metaclass=abc.ABCMeta):
+    @classmethod
+    def __subclasshook__(cls, subclass):
+        return (hasattr(subclass, 'process') and
+                callable(subclass.process) and
+                hasattr(subclass, 'extract_text') and
+                callable(subclass.extract_text) or
+                NotImplemented)
+
+    @abc.abstractmethod
+    def process(self):
+        """///"""
+        raise NotImplementedError
 
 
 def done(update, context) -> int:

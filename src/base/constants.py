@@ -31,3 +31,6 @@ DOMAIN_PROPERTY = "Domain"
 CATEGORY_STATUS = "Status"
 
 STATUS_TODO = "To Do"
+
+LINK_TYPE = "link"
+CINEMA_TYPE = "cinema"

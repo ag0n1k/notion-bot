@@ -29,7 +29,7 @@ class NBotConversation:
             MessageHandler(Filters.all, handlers.entry.main),
         ],
         states={
-            START: [MessageHandler(Filters.all & (~Filters.command), handlers.entry.start)],
+            START: [MessageHandler(Filters.all, handlers.entry.start)],
             CATEGORY: [
                 MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_GET_KEY)), handlers.category.get),
                 MessageHandler(Filters.regex('^({})$'.format(KEYBOARD_REMOVE_KEY)), handlers.category.choose),

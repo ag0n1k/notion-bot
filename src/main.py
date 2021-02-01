@@ -4,7 +4,7 @@ from base.bot import NBot
 from base.conversation import NBotConversation
 from base.clients import NBotClient, NBotS3Client
 
-logging.basicConfig(level=logging.INFO,
+logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 logger = logging.getLogger(__name__)

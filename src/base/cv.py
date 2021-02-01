@@ -12,6 +12,9 @@ class NBotCV(object):
     def connect(self):
         self.cv = self.notion_client.connect(self._notion_link)
 
+    def save(self, *args, **kwargs):
+        raise NotImplementedError()
+
     @property
     def notion_link(self):
         return self._notion_link

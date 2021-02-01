@@ -1,5 +1,6 @@
 from base.clients import NBotS3Client
 from base.category import NBotCategoryContainer
+from base.link_types import NBotLinks
 
 from time import time
 import logging
@@ -8,42 +9,54 @@ logger = logging.getLogger(__name__)
 
 
 class NBotContext:
+    links: list
+
     def __init__(self, username):
-        self.s3_client = NBotS3Client()
         self.username = username
+        self.s3_client = NBotS3Client()
         self.categories = NBotCategoryContainer()
-        self.current_link = ""
+        self.notion_dbs = NBotLinks()
+        self.connected = False
+
+    def process(self, links):
+        res = []
+        for link in list(set(links).difference(set(self.links))):
+            category = self.categories.search(link)
+            if category:
+                link = category.save_link(link)
+            res.append(link)
+        self.save()
+        return res
+
+    def connect(self):
+        logger.info("Connecting to notion for the user {}".format(self.username))
+        try:
+            self.categories.connect(self.notion_dbs)
+            self.connected = True
+        except Exception as err:
+            logger.error("Unable to connect {}".format(self.username), exc_info=True)
 
     def save(self):
-        logger.info("Saving the current state")
+        logger.info("{} - Saving the current state".format(self.username))
         self.s3_client.put(
             user=self.username,
-            dict_value=self.__dump
+            dict_value=dict(
+                username=self.username,
+                links=self.links,
+                categories=self.categories.dump(),
+                notion_links=self.notion_dbs.__dict__,
+                timestamp=int(time())
+            )
         )
 
     def load(self):
         body = self.s3_client.get(user=self.username)
         if body:
             try:
-                self.__load(body)
+                logger.info("Loading body...")
+                self.username = body['username']
+                self.categories.load(body['categories'])
+                self.links = body['links']
+                self.notion_dbs.__dict__ = body['notion_links']
             except KeyError as err:
-                logging.error("Got error on load", exc_info=True)
-
-    @property
-    def __dump(self):
-        return dict(
-            username=self.username,
-            dblink=self._dblink,
-            links=self.links,
-            categories=self.categories.dump(),
-            statuses=self.statuses,
-            timestamp=int(time())
-        )
-
-    def __load(self, body):
-        logger.info(body)
-        self.username = body['username']
-        self.categories.load(body['categories'])
-        self.dblink = body['dblink']
-        self.links = body['links']
-        self.statuses = body['statuses']
+                logging.error("Got error!", exc_info=True)

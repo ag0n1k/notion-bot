@@ -1,5 +1,10 @@
 import logging
 
+from base.constants import *
+from base.cv import NBotCV
+from base.link_types import NBotLinks
+from base.utils import get_domain
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,8 +33,9 @@ class NBotCategoryContainer(object):
     def __getitem__(self, key):
         return self._categories.get(key, None)
 
-    def search(self, domain):
-        logger.info("Trying to get category for the domain: {}".format(domain))
+    def search(self, link):
+        domain = get_domain(link)
+        logger.info("Trying to get category for the domain: {} from {} ".format(domain, link))
         for name, cat in self._categories.items():
             if cat.search(domain):
                 logger.info("Category was found: {cat}".format(cat=cat.name))
@@ -51,6 +57,17 @@ class NBotCategoryContainer(object):
             logger.info("Adding new category: {}".format(name))
             self._categories.update({name: NBotCategory(name=name)})
 
+    def connect(self, db_links: NBotLinks):
+        for category in self._categories.values():
+            category.connect(db_links)
+
+    @property
+    def connected(self):
+        for category in self._categories.values():
+            if not category.connected:
+                return False
+        return True
+
     @property
     def view(self):
         return [str(i) for i in self._categories.values()]
@@ -68,9 +85,12 @@ class NBotCategoryContainer(object):
 
 
 class NBotCategory(object):
-    def __init__(self, name=None, domains=()):
+    notion: NBotCV
+
+    def __init__(self, db_type=LINK_TYPE, name=None, domains=()):
         self._name = name
         self._domains = list(domains)
+        self.db_type = db_type
 
     @property
     def name(self):
@@ -88,14 +108,29 @@ class NBotCategory(object):
     def domains(self, value):
         self._domains = value
 
-    def remove(self, domain):
-        logger.info("Removing {} from {}".format(domain, self._domains))
-        self._domains.remove(domain)
+    @property
+    def connected(self):
+        logger.info("Check connection for the {}".format(self.name))
+        if not hasattr(self, 'notion'):
+            return False
+        return self.notion.connected
 
     def __add__(self, other):
         if not isinstance(other, list):
             other = [other]
         self._domains.extend(list(set(other).difference(set(self.domains))))
+
+    def save_link(self, link):
+        return self.notion.save(self.name, link)
+
+    def connect(self, db_links: NBotLinks):
+        self.notion = db_links.DB_TYPES_IMPLEMENTATION[self.db_type]
+        self.notion.notion_link = db_links.__getattribute__(self.db_type)
+        self.notion.connect()
+
+    def remove(self, domain):
+        logger.info("Removing {} from {}".format(domain, self._domains))
+        self._domains.remove(domain)
 
     def update(self, other):
         logger.debug("Updating domains {} with: {}".format(self.domains, other))
@@ -114,9 +149,11 @@ class NBotCategory(object):
     def dump(self):
         return {
             'name': self._name,
-            'domains': self._domains
+            'domains': self._domains,
+            'db_type': self.db_type
         }
 
     def load(self, body):
-        self.name = body['name']
-        self.domains = body['domains']
+        for key, val in body.items():
+            if hasattr(self, key):
+                setattr(self, key, val)

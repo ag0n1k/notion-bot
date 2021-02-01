@@ -1,7 +1,7 @@
 from random import randint
 
 from base.constants import *
-from db.filters import category_todo
+from base.filters import category_todo
 
 
 def get_statuses(cv):

@@ -1,6 +1,6 @@
 import logging
 from base.context import NBotContext
-from base.constants import *
+from handlers.entry import start
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +18,11 @@ def init_context(func):
             context = NBotContext(username=t_user.username)
             context.load()
             context.connect()
-            logger.info("Connection established for the user {}".format(context.username))
             bot_context.user_data['bot_context'] = context
         if not context.connected:
-            return START
+            logger.info("Connection is lost for the user {}".format(context.username))
+            update.message.reply_text("Init the bot!")
+            return start(update, context, *args, **kwargs)
         logger.info("{} - Call the {}".format(context.username, func.__name__))
         return func(update, context, *args, **kwargs)
 

@@ -1,16 +1,19 @@
-from base.context import NBotCV
-from db.filters import empty_property
+from base.cv import NBotCV
+from base.filters import empty_property
 from base.constants import *
-import logging
 
-from base.utils import get_domain
+from base.utils import get_domain, MetaSingleton
 from parsers.link import NBotLink
+import logging
 
 logger = logging.getLogger(__name__)
 
 
 class NBotLinkDB(NBotCV):
     cv = None
+    current_sync_link: str
+    current_link: str
+    sync_links: list
 
     @property
     def last_sync_link(self):
@@ -31,30 +34,14 @@ class NBotLinkDB(NBotCV):
         logger.info("Clear the current state")
         self.current_link = ""
 
-    def process(self, links):
-        res = []
-        for link in list(set(links).difference(set(self.links))):
-            n_link = NBotLink(link)
-            category = self.categories.search(n_link.domain)
-            if category:
-                logger.info("Saving {} to notion".format(link))
-                res.append(self._add_row(link=n_link, category=category))
-            else:
-                logger.info("Saving {} for process".format(link))
-                self.links.append(link)
-                res.append(link)
-            del n_link
-        self.save()
-        return res
-
-    def _add_row(self, link: NBotLink, category: NBotCategory, status=STATUS_TODO):
-        # get the content if only the link is for auto parsing
+    def save(self, link: str, category: str, status=STATUS_TODO):
+        link = NBotLink(link)
         link.soup()
         row = self.row
         row.name = link.title
         row.url = link.link
         row.domain = link.domain
-        row.category = category.name
+        row.category = category
         row.status = status
         return row.get_browseable_url()
 

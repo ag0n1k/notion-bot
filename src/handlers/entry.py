@@ -52,11 +52,9 @@ def process(update, context: NBotContext):
 
 @init_context
 def start(update, context: NBotContext):
-    logger.info(context.username)
     if context.connected:
         update.message.reply_text("Bot successfully connected to the notion. Send me the links.")
         return ConversationHandler.END
-    logger.info("Context not connected {}".format(SET_LINK))
     update.message.reply_text(
         "Hi, this is notion link care bot that take care of your links in notion.\n"
         "Okay, now we have 3 actions to be done:\n"

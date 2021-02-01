@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 class NBotContext:
     s3 = NBotS3Client(key_template="nbot_{user}_v2.json")
+    start_over = False
 
     def __init__(self, username):
         self.username = username

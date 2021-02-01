@@ -10,42 +10,32 @@ from telegram.ext import (
 )
 
 from constants import *
-
-
-# Top level conversation callbacks
 from context import NBotContext
 from decorators import check_context
 
 
-def start(update: Update, context: CallbackContext) -> None:
+@check_context
+def start(update: Update, context: NBotContext) -> None:
     text = (
         'Welcome to the menu'
     )
-    buttons = [
-        [
+    buttons = [[
             InlineKeyboardButton(text='Notion', callback_data=str(NOTION)),
-        ],
-        [
             InlineKeyboardButton(text='Category', callback_data=str(CATEGORY)),
-        ],
-        [
             InlineKeyboardButton(text='Done', callback_data=str(ConversationHandler.END)),
-        ]
-    ]
-    keyboard = InlineKeyboardMarkup(buttons)
-
+    ]]
     # If we're starting over we don't need do send a new message
-    if context.user_data.get(START_OVER):
+    if context.start_over:
         update.callback_query.answer()
-        update.callback_query.edit_message_text(text=text, reply_markup=keyboard)
+        update.callback_query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
     else:
-        update.message.reply_text(text=text, reply_markup=keyboard)
+        update.message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
 
-    context.user_data[START_OVER] = False
+    context.start_over = False
     return SELECTING_ACTION
 
 
 @check_context
 def process(update: Update, context: NBotContext) -> None:
-    update.message.reply_text(text=update.message.text + str(context.__dict__))
+    update.message.reply_text(text=update.message.text + " " + str(context.__dict__))
     return ConversationHandler.END

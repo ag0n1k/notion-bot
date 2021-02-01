@@ -27,8 +27,11 @@ logger = logging.getLogger(__name__)
 
 def stop(update: Update, context: CallbackContext) -> None:
     """End Conversation by command."""
-    update.message.reply_text('Okay, bye.')
-
+    text = 'Okay, bye.'
+    if update.message:
+        update.message.reply_text(text=text)
+    else:
+        update.callback_query.edit_message_text(text=text)
     return ConversationHandler.END
 
 
@@ -49,6 +52,7 @@ def main():
     selection_handlers = [
         CallbackQueryHandler(category, pattern='^' + str(CATEGORY) + '$'),
         CallbackQueryHandler(notion, pattern='^' + str(NOTION) + '$'),
+        CallbackQueryHandler(stop, pattern='^' + str(ConversationHandler.END) + '$'),
     ]
     conv_handler = ConversationHandler(
         entry_points=[

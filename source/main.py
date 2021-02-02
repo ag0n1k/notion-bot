@@ -2,8 +2,8 @@ import logging
 import os
 
 from handlers.entry_points import start, process
-from constants import *
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update
+from base.constants import *
+from telegram import Update
 from telegram.ext import (
     Updater,
     CommandHandler,
@@ -13,9 +13,9 @@ from telegram.ext import (
     CallbackQueryHandler,
     CallbackContext,
 )
-
+from base.converstations import NBotConversationMain
 # Enable logging
-from handlers.select import category, notion
+from handlers.select import category, notion, create
 
 logging.basicConfig(
     level=logging.INFO,
@@ -44,31 +44,40 @@ def main():
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
 
-    # Set up third level ConversationHandler (collecting features)
-
-    # Set up top level ConversationHandler (selecting action)
-    # Because the states of the third level conversation map to the ones of the econd level
-    # conversation, we need to make sure the top level conversation can also handle them
-    selection_handlers = [
-        CallbackQueryHandler(category, pattern='^' + str(CATEGORY) + '$'),
-        CallbackQueryHandler(notion, pattern='^' + str(NOTION) + '$'),
-        CallbackQueryHandler(stop, pattern='^' + str(ConversationHandler.END) + '$'),
-    ]
-    conv_handler = ConversationHandler(
-        entry_points=[
-            CommandHandler('start', start),
-            CommandHandler('configure', start),
-            MessageHandler(Filters.all, process),
-        ],
-        states={
-            SELECTING_ACTION: selection_handlers,
-            SELECTING_LEVEL: selection_handlers,
-            STOPPING: [CommandHandler('start', start)],
-        },
-        fallbacks=[CommandHandler('stop', stop)],
-    )
-
-    dispatcher.add_handler(conv_handler)
+    # selection_handlers = [
+    #     CallbackQueryHandler(category, pattern='^' + str(CATEGORY) + '$'),
+    #     CallbackQueryHandler(notion, pattern='^' + str(NOTION) + '$'),
+    #     CallbackQueryHandler(create, pattern='^' + str(CREATE) + '$'),
+    #     CallbackQueryHandler(create, pattern='^' + str(REMOVE) + '$'),
+    #     CallbackQueryHandler(stop, pattern='^' + str(ConversationHandler.END) + '$'),
+    # ]
+    # notion_handler = ConversationHandler(
+    #     entry_points=[],
+    #     states={},
+    #     fallbacks=[]
+    # )
+    # category_handler = ConversationHandler(
+    #     entry_points=[],
+    #     states={},
+    #     fallbacks=[]
+    # )
+    # conv_handler = ConversationHandler(
+    #     entry_points=[
+    #         CommandHandler('start', start),
+    #         CommandHandler('configure', start),
+    #         MessageHandler(Filters.all, process),
+    #     ],
+    #     states={
+    #         CATEGORY: selection_handlers,
+    #         NOTION: selection_handlers,
+    #         CONNECT: [],
+    #         STOPPING: [CommandHandler('start', start)],
+    #     },
+    #     fallbacks=[CommandHandler('stop', stop)],
+    # )
+    #
+    main_ = NBotConversationMain()
+    dispatcher.add_handler(main_.conversation)
 
     # Start the Bot
     updater.start_polling()

@@ -22,3 +22,11 @@ STOPPING, SHOWING = map(chr, range(8, 10))
     CURRENT_FEATURE,
     CURRENT_LEVEL,
 ) = map(chr, range(10, 22))
+
+
+CREATE, REMOVE, CONNECT = map(chr, range(22, 25))
+CINEMA, LINK = map(chr, range(25, 27))
+
+NOTION_CINEMA_TYPE = 'Cinema'
+NOTION_LINK_TYPE = 'Link'
+NOTION_TYPES = [NOTION_CINEMA_TYPE, NOTION_LINK_TYPE]

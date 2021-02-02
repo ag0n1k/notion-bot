@@ -1,17 +1,11 @@
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update
 from telegram.ext import (
-    Updater,
-    CommandHandler,
-    MessageHandler,
-    Filters,
     ConversationHandler,
-    CallbackQueryHandler,
-    CallbackContext,
 )
 
-from constants import *
+from base.constants import *
 from context import NBotContext
-from decorators import check_context
+from base.decorators import check_context
 
 
 @check_context

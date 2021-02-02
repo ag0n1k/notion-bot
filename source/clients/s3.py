@@ -1,4 +1,3 @@
-from notion.client import NotionClient
 from utils import MetaSingleton
 import boto3
 from botocore import exceptions as bexc
@@ -6,14 +5,6 @@ import json
 import logging
 
 logger = logging.getLogger(__name__)
-
-
-class NBotClient(NotionClient, metaclass=MetaSingleton):
-    def __init__(self, token=None):
-        super().__init__(token_v2=token)
-
-    def connect(self, link):
-        return self.get_collection_view(link)
 
 
 class NBotS3ClientError(Exception):

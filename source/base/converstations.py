@@ -80,7 +80,6 @@ class NBotConversationMain(NBotConversation):
     def start(update: Update, context: NBotContext, text='Welcome to the menu') -> None:
         buttons = [[
             InlineKeyboardButton(text='Notion', callback_data=str(NOTION)),
-            InlineKeyboardButton(text='Category', callback_data=str(CATEGORY)),
             InlineKeyboardButton(text='Done', callback_data=str(ConversationHandler.END)),
         ]]
         if update.message:
@@ -220,7 +219,6 @@ class NBotConversationNotion(NBotConversation):
         NBotConversationMain.start(update=update, context=context, text=text)
 
         return NBotConversationNotion.END
-
 
     @staticmethod
     @check_context

@@ -33,6 +33,7 @@ class NBotContext:
             logger.warning("{} - S3 - No body found".format(self.username))
             return
         try:
+            logger.info("{} - S3 - Got body {}".format(self.username, body))
             self.username = body['username']
             self.db_container.json = body['db_container']
         except KeyError as err:

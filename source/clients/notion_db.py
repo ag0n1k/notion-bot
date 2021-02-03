@@ -14,6 +14,7 @@ class NBotClient(NotionClient, metaclass=MetaSingleton):
 
 class NBotCV(object):
     cv: CollectionView
+    _db_type = ""
     _notion_link = ""
     _categories: Dict[str, List[str]]
 
@@ -21,7 +22,8 @@ class NBotCV(object):
         self.notion_client = NBotClient()
 
     def connect(self):
-        self.cv = self.notion_client.connect(self._notion_link)
+        if not self.connected:
+            self.cv = self.notion_client.connect(self._notion_link)
 
     def save(self, *args, **kwargs):
         raise NotImplementedError()
@@ -35,6 +37,14 @@ class NBotCV(object):
         # TODO merge dicts...
         # cat = self._categories.get(value.popitem()[0], None)
         self._categories.update(value)
+
+    @property
+    def db_type(self):
+        return self._db_type
+
+    @db_type.setter
+    def db_type(self, value):
+        self._db_type = value
 
     @property
     def notion_link(self):
@@ -54,8 +64,14 @@ class NBotCV(object):
 
     @property
     def json(self):
-        return dict(link=self._notion_link)
+        return dict(
+            link=self._notion_link,
+            db_type=self._db_type,
+            categories=self._categories,
+        )
 
     @json.setter
     def json(self, body):
         self._notion_link = body['link']
+        self._categories = body['categories']
+        self._db_type = body['db_type']

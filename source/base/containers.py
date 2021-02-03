@@ -4,6 +4,9 @@ from notion_scheme.empty import NBotEmptyDB
 from notion_scheme.link import NBotLinkDB
 from base.constants import *
 from typing import Dict, List
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class NBotDBContainer:
@@ -23,7 +26,13 @@ class NBotDBContainer:
         return self._dbs.get(db_type, None)
 
     def create(self, db_type: str):
-        self._dbs.update({db_type: NBotEmptyDB()})
+        self._dbs.update({db_type: NBotEmptyDB(db_type=db_type)})
+
+    def remove(self, db_type):
+        if self._dbs.get(db_type, None):
+            del self._dbs[db_type]
+        logger.info("Removed {}".format(db_type))
+        logger.info(self._dbs)
 
     @property
     def types(self):
@@ -36,7 +45,10 @@ class NBotDBContainer:
     @json.setter
     def json(self, body: List[Dict[str, NBotCV]]):
         for el in body:
-            for k, v in el:
+            for k, v in el.items():
                 if not self.get(k):
                     self.create(k)
-                self._dbs[k].json = v
+                try:
+                    self._dbs[k].json = v
+                except KeyError as e:
+                    logger.error("Got error on loading data for {}".format(k), exc_info=True)

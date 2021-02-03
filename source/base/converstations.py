@@ -123,7 +123,7 @@ class NBotConversationCategory(NBotConversation):
 
 
 class NBotConversationNotion(NBotConversation):
-    (CHOOSE, SET) = range(2)
+    (CHOOSE, SET, REMOVE, ACTION, GET) = range(5)
 
     def __init__(self):
         self.conversation = ConversationHandler(
@@ -132,11 +132,19 @@ class NBotConversationNotion(NBotConversation):
             ],
             states={
                 self.CHOOSE: [
-                    CallbackQueryHandler(self.get_type),
+                    CallbackQueryHandler(self.get_action),
                     MessageHandler(Filters.all, self.get_type),
+                ],
+                self.ACTION: [
+                    CallbackQueryHandler(self.remove, pattern='^' + str(self.REMOVE) + '$'),
+                    CallbackQueryHandler(self.typing_link, pattern='^' + str(self.SET) + '$'),
+                    CallbackQueryHandler(self.get_link, pattern='^' + str(self.GET) + '$'),
                 ],
                 self.SET: [
                     MessageHandler(Filters.all, self.set_link),
+                ],
+                self.REMOVE: [
+                    MessageHandler(Filters.all, self.remove),
                 ],
                 self.LEVEL_ONE: [
                     CallbackQueryHandler(self.stop, pattern='^' + str(ConversationHandler.END) + '$'),
@@ -167,30 +175,70 @@ class NBotConversationNotion(NBotConversation):
 
     @staticmethod
     @check_context
-    def get_type(update: Update, context: NBotContext) -> None:
+    def get_action(update: Update, context: NBotContext) -> None:
         if update.message:
             db_type = update.message.text
         else:
             db_type = update.callback_query.data
+        context.cv_buffer = context.db_container.get(db_type)
+        text = 'Set or Remove {}'.format(context.cv_buffer.db_type)
+        buttons = [[
+            InlineKeyboardButton(text="Get", callback_data=str(NBotConversationNotion.GET)),
+            InlineKeyboardButton(text="Set", callback_data=str(NBotConversationNotion.SET)),
+            InlineKeyboardButton(text="Remove", callback_data=str(NBotConversationNotion.REMOVE))
+        ]]
+
+        update.callback_query.edit_message_text(
+            text=text, reply_markup=InlineKeyboardMarkup(buttons))
+
+        return NBotConversationNotion.ACTION
+
+    @staticmethod
+    @check_context
+    def get_type(update: Update, context: NBotContext) -> None:
+        db_type = update.message.text
         logger.info("{} - Got type {}".format(context.username, db_type))
         context.cv_buffer = context.db_container.get(db_type, create_if_not_exists=True)
-        if not context.cv_buffer.notion_link:
-            text = "Send me a notion link that associates with {}".format(db_type)
-            if update.message:
-                update.message.reply_text(text=text)
-            else:
-                update.callback_query.edit_message_text(text=text)
-            return NBotConversationNotion.SET
+        return NBotConversationNotion.typing_link(update=update, context=context)
+
+    @staticmethod
+    @check_context
+    def typing_link(update: Update, context: NBotContext) -> None:
+        text = "Send me a notion link that associates with {}".format(context.cv_buffer.db_type)
+        if update.message:
+            update.message.reply_text(text=text)
         else:
-            text = "Already have a link {}.\nBack to menu...".format(context.cv_buffer.notion_link)
-            NBotConversationMain.start(update=update, context=context, text=text)
-            return NBotConversationNotion.END
+            update.callback_query.answer()
+            update.callback_query.edit_message_text(text=text)
+        return NBotConversationNotion.SET
+
+    @staticmethod
+    @check_context
+    def get_link(update: Update, context: NBotContext) -> None:
+        text = "The type {} with {}.\nBack in menu...".format(context.cv_buffer.db_type,
+                                                              context.cv_buffer.notion_link)
+        NBotConversationMain.start(update=update, context=context, text=text)
+
+        return NBotConversationNotion.END
+
 
     @staticmethod
     @check_context
     def set_link(update: Update, context: NBotContext) -> None:
         logger.info("{} - Got Link {}".format(context.username, update.message.text))
         context.cv_buffer.notion_link = update.message.text
+        del context.cv_buffer
+        context.save()
+
+        NBotConversationMain.start(update=update, context=context)
+        return NBotConversationNotion.END
+
+    @staticmethod
+    @check_context
+    def remove(update: Update, context: NBotContext) -> None:
+        logger.info("{} - Removing {}".format(context.username, context.cv_buffer.db_type))
+        context.db_container.remove(context.cv_buffer.db_type)
+        context.save()
 
         NBotConversationMain.start(update=update, context=context)
         return NBotConversationNotion.END

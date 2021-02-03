@@ -1,4 +1,4 @@
-from telegram import InlineKeyboardButton, Update, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, Update, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from telegram.ext import (
     Updater,
     CommandHandler,
@@ -24,6 +24,21 @@ class NBotConversation:
     @staticmethod
     def start(update: Update, context: NBotContext) -> None:
         raise NotImplementedError()
+
+    # @staticmethod
+    # def send(update, text, reply_markup, otk):
+    #     if update.message:
+    #         update.message.reply_text(
+    #             text=text,
+    #             reply_markup=reply_markup,
+    #             one_time_keyboard=otk
+    #         )
+    #     else:
+    #         update.callback_query.edit_message_text(
+    #             text=text,
+    #             reply_markup=reply_markup,
+    #             one_time_keyboard=otk
+    #         )
 
     @staticmethod
     @check_context
@@ -62,8 +77,7 @@ class NBotConversationMain(NBotConversation):
 
     @staticmethod
     @check_context
-    def start(update: Update, context: NBotContext) -> None:
-        text = 'Welcome to the menu'
+    def start(update: Update, context: NBotContext, text='Welcome to the menu') -> None:
         buttons = [[
             InlineKeyboardButton(text='Notion', callback_data=str(NOTION)),
             InlineKeyboardButton(text='Category', callback_data=str(CATEGORY)),
@@ -109,12 +123,21 @@ class NBotConversationCategory(NBotConversation):
 
 
 class NBotConversationNotion(NBotConversation):
+    (CHOOSE, SET) = range(2)
+
     def __init__(self):
         self.conversation = ConversationHandler(
             entry_points=[
-                CallbackQueryHandler(self.start, pattern='^' + str(NOTION) + '$'),
+                CallbackQueryHandler(self.connect, pattern='^' + str(NOTION) + '$'),
             ],
             states={
+                self.CHOOSE: [
+                    CallbackQueryHandler(self.get_type),
+                    MessageHandler(Filters.all, self.get_type),
+                ],
+                self.SET: [
+                    MessageHandler(Filters.all, self.set_link),
+                ],
                 self.LEVEL_ONE: [
                     CallbackQueryHandler(self.stop, pattern='^' + str(ConversationHandler.END) + '$'),
                 ],
@@ -130,14 +153,47 @@ class NBotConversationNotion(NBotConversation):
 
     @staticmethod
     @check_context
-    def start(update: Update, context: NBotContext) -> None:
-        text = 'Okay, bye.'
+    def connect(update: Update, context: NBotContext) -> None:
+        text = 'Choose db type to work with:'
+        buttons = [
+            [InlineKeyboardButton(text=t, callback_data=t) for t in context.db_container.types]
+        ]
+
+        update.callback_query.answer()
+        update.callback_query.edit_message_text(
+            text=text, reply_markup=InlineKeyboardMarkup(buttons))
+
+        return NBotConversationNotion.CHOOSE
+
+    @staticmethod
+    @check_context
+    def get_type(update: Update, context: NBotContext) -> None:
         if update.message:
-            update.message.reply_text(text=text)
+            db_type = update.message.text
         else:
-            update.callback_query.edit_message_text(text=text)
+            db_type = update.callback_query.data
+        logger.info("{} - Got type {}".format(context.username, db_type))
+        context.cv_buffer = context.db_container.get(db_type, create_if_not_exists=True)
+        if not context.cv_buffer.notion_link:
+            text = "Send me a notion link that associates with {}".format(db_type)
+            if update.message:
+                update.message.reply_text(text=text)
+            else:
+                update.callback_query.edit_message_text(text=text)
+            return NBotConversationNotion.SET
+        else:
+            text = "Already have a link {}.\nBack to menu...".format(context.cv_buffer.notion_link)
+            NBotConversationMain.start(update=update, context=context, text=text)
+            return NBotConversationNotion.END
+
+    @staticmethod
+    @check_context
+    def set_link(update: Update, context: NBotContext) -> None:
+        logger.info("{} - Got Link {}".format(context.username, update.message.text))
+        context.cv_buffer.notion_link = update.message.text
+
         NBotConversationMain.start(update=update, context=context)
-        return NBotConversation.END
+        return NBotConversationNotion.END
 
     @staticmethod
     @check_context

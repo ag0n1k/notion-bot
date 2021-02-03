@@ -1,3 +1,4 @@
+from clients.notion_db import NBotCV
 from clients.s3 import NBotS3Client
 from base.containers import NBotDBContainer
 from time import time
@@ -8,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class NBotContext:
     s3 = NBotS3Client(key_template="nbot_{user}_v2.json")
-    buffer = dict()
+    cv_buffer: NBotCV
 
     def __init__(self, username):
         self.username = username

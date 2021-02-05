@@ -25,8 +25,14 @@ class NBotCV(object):
         if not self.connected:
             self.cv = self.notion_client.connect(self._notion_link)
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> str:
         raise NotImplementedError()
+
+    def check_domain(self, domain) -> (str, None):
+        for name, domains in self._categories.items():
+            if domain in domains:
+                return name
+        return None
 
     @property
     def categories(self) -> Dict[str, List[str]]:

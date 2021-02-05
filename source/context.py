@@ -1,6 +1,6 @@
+from base.containers import NBotDBContainer
 from clients.notion_db import NBotCV
 from clients.s3 import NBotS3Client
-from base.containers import NBotDBContainer
 from time import time
 import logging
 
@@ -14,6 +14,10 @@ class NBotContext:
     def __init__(self, username):
         self.username = username
         self.db_container = NBotDBContainer()
+        self.store = []
+
+    def store_difference(self, links):
+        return list(set(links).difference(set(self.store)))
 
     def save(self):
         logger.info("{} - S3 - Saving the current state".format(self.username))
@@ -22,6 +26,7 @@ class NBotContext:
             dict_value=dict(
                 username=self.username,
                 db_container=self.db_container.json,
+                store=self.store,
                 timestamp=int(time())
             )
         )
@@ -36,5 +41,6 @@ class NBotContext:
             logger.info("{} - S3 - Got body {}".format(self.username, body))
             self.username = body['username']
             self.db_container.json = body['db_container']
+            self.store = body['store']
         except KeyError as err:
             logger.error("Got error on load", exc_info=True)

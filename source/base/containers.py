@@ -6,6 +6,8 @@ from base.constants import *
 from typing import Dict, List
 import logging
 
+from utils import get_domain
+
 logger = logging.getLogger(__name__)
 
 
@@ -20,6 +22,16 @@ class NBotDBContainer:
             NOTION_CINEMA_TYPE: self.cinema,
         }
 
+    def process(self, link: str) -> (str, None):
+        typ = self.get_type(get_domain(link))
+        return typ.save(link) if typ else None
+
+    def get_type(self, domain: str) -> (NBotCV, None):
+        for item in self._dbs.values():
+            if item.check_domain(domain):
+                return item
+        return None
+
     def get(self, db_type: str, create_if_not_exists=False) -> NBotCV:
         if not self._dbs.get(db_type, None) and create_if_not_exists:
             self.create(db_type)
@@ -27,6 +39,12 @@ class NBotDBContainer:
 
     def create(self, db_type: str):
         self._dbs.update({db_type: NBotEmptyDB(db_type=db_type)})
+
+    def update_categories(self, db_type: str, category: str, domains: list):
+        typ = self.get(db_type, create_if_not_exists=True)
+        if isinstance(domains, str):
+            domains = [domains]
+        typ.categories = {category: domains}
 
     def remove(self, db_type):
         if self._dbs.get(db_type, None):

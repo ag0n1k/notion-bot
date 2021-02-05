@@ -12,6 +12,7 @@ from telegram.ext import (
 from base.constants import *
 from base.decorators import check_context
 from context import NBotContext
+from utils import get_domain
 import logging
 
 logger = logging.getLogger(__name__)
@@ -51,6 +52,24 @@ class NBotConversation:
         else:
             update.callback_query.edit_message_text(text=text)
         return NBotConversation.END
+
+    @staticmethod
+    def get_links(message):
+        return NBotConversation.parse_links(entities=message.caption_entities, text=message.caption) \
+            if message.caption \
+            else NBotConversation.parse_links(entities=message.entities, text=message.text)
+
+    @staticmethod
+    def parse_links(entities, text):
+        res = set()
+        for entity in entities:
+            if entity.type == 'text_link':
+                res.add(entity.url)
+            elif entity.type == 'url':
+                res.add(text[entity.offset:entity.offset + entity.length])
+            else:
+                print('got unknown type: ', entity.type)
+        return res
 
 
 class NBotConversationMain(NBotConversation):
@@ -94,32 +113,14 @@ class NBotConversationMain(NBotConversation):
 
         return NBotConversationMain.LEVEL_ONE
 
-    def get_links(self, message):
-        if message.caption:
-            entities = message.caption_entities
-            text = message.caption
-        else:
-            entities = message.entities
-            text = message.text
-        return self.parse_links(entities=entities, text=text)
-
-    def parse_links(self, entities, text):
-        res = set()
-        for entity in entities:
-            if entity.type == 'text_link':
-                res.add(entity.url)
-            elif entity.type == 'url':
-                res.add(text[entity.offset:entity.offset + entity.length])
-            else:
-                print('got unknown type: ', entity.type)
-        return res
-
     @staticmethod
     @check_context
     def default_process(update: Update, context: NBotContext) -> None:
-        update.message.reply_text(
-            text=update.message.text + " default " + str(context.__dict__)
-        )
+        res = []
+        for link in context.store_difference(NBotConversationMain.get_links(update.message)):
+            notion_link = context.db_container.process(domain=get_domain(link))
+            res.append(notion_link) if notion_link else link  # if saved: link to notion, else original link
+        update.message.reply_text(text="Processed:\n{}".format("\n".join(res)))
         return NBotConversationMain.STOP
 
     @staticmethod

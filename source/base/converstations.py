@@ -126,7 +126,7 @@ class NBotConversationMain(NBotConversation):
     @check_context
     def forward_process(update: Update, context: NBotContext) -> None:
         update.message.reply_text(
-            text="Got '''\n" + update.message.text + "'''\nIt's interesing. But not implemented...")
+            text="Got '''\n" + update.message.text + "'''\nIt's interesting. But not implemented...")
         return NBotConversationMain.STOP
 
 

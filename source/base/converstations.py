@@ -12,7 +12,6 @@ from telegram.ext import (
 from base.constants import *
 from base.decorators import check_context
 from context import NBotContext
-from utils import get_domain
 import logging
 
 logger = logging.getLogger(__name__)
@@ -21,7 +20,7 @@ logger = logging.getLogger(__name__)
 class NBotConversation:
     END = ConversationHandler.END
     conversation: ConversationHandler
-    (STOP, LEVEL_ONE, LEVEL_TWO) = map(chr, range(0, 3))
+    (STOP, TYPE, LEVEL_ONE, LEVEL_TWO) = range(0, 4)
 
     @staticmethod
     def start(update: Update, context: NBotContext) -> None:
@@ -71,6 +70,13 @@ class NBotConversation:
                 print('got unknown type: ', entity.type)
         return res
 
+    @staticmethod
+    @check_context
+    def level_up(update: Update, context: NBotContext) -> None:
+        logger.info("{} - Level up".format(context.username))
+        NBotConversationMain.start(update=update, context=context)
+        return NBotConversationNotion.END
+
 
 class NBotConversationMain(NBotConversation):
     def __init__(self):
@@ -80,6 +86,7 @@ class NBotConversationMain(NBotConversation):
             entry_points=[
                 CommandHandler('start', self.start),
                 CommandHandler('configure', self.start),
+                CommandHandler('process', self.store_process),
                 MessageHandler(Filters.all, self.default_process),
                 MessageHandler(Filters.forwarded, self.forward_process),
             ],
@@ -93,24 +100,31 @@ class NBotConversationMain(NBotConversation):
                     CallbackQueryHandler(self.stop, pattern='^' + str(ConversationHandler.END) + '$'),
                     MessageHandler(Filters.all, self.stop),
                 ],
+                self.TYPE: [
+                    self.conv_category.conversation,
+                ],
                 CATEGORY: [],
                 NOTION: []
             },
-            fallbacks=[]
+            fallbacks=[],
         )
 
     @staticmethod
     @check_context
     def start(update: Update, context: NBotContext, text='Welcome to the menu') -> None:
-        buttons = [[
-            InlineKeyboardButton(text='Notion', callback_data=str(NOTION)),
-            InlineKeyboardButton(text='Done', callback_data=str(ConversationHandler.END)),
-        ]]
+        logger.info("Start")
+        buttons = [
+            [
+                InlineKeyboardButton(text='Update Notion DB Links', callback_data=str(NOTION)),
+                InlineKeyboardButton(text='Check Store', callback_data=str(CATEGORY)),
+                InlineKeyboardButton(text='Close Menu', callback_data=str(ConversationHandler.END)),
+            ]
+        ]
         if update.message:
             update.message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
         else:
             update.callback_query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
-
+        logger.info("Finish")
         return NBotConversationMain.LEVEL_ONE
 
     @staticmethod
@@ -118,10 +132,23 @@ class NBotConversationMain(NBotConversation):
     def default_process(update: Update, context: NBotContext) -> None:
         res = []
         for link in context.store_difference(NBotConversationMain.get_links(update.message)):
-            notion_link = context.db_container.process(domain=get_domain(link))
-            res.append(notion_link) if notion_link else link  # if saved: link to notion, else original link
+            notion_link = context.db_container.process(link=link)
+            logger.info("{} - Processed {}, result {}".format(context.username, link, notion_link))
+            res.append(notion_link) if notion_link else res.append(link)  # if saved: link to notion, else original link
         context.store.extend(res)
+        context.save()
         update.message.reply_text(text="Processed:\n{}".format("\n".join(res)))
+        return NBotConversationMain.END
+
+    @staticmethod
+    @check_context
+    def store_process(update: Update, context: NBotContext) -> None:
+        try:
+            link = context.store.pop()
+        except IndexError:
+            update.message.reply_text(text="The link store is empty!")
+            return NBotConversationMain.END
+        update.message.reply_text(text="Choose type or send a new one of the link:\n{}".format(link))
         return NBotConversationMain.STOP
 
     @staticmethod
@@ -136,7 +163,7 @@ class NBotConversationCategory(NBotConversation):
     def __init__(self):
         self.conversation = ConversationHandler(
             entry_points=[
-                CallbackQueryHandler(self.stop, pattern='^' + str(CATEGORY) + '$'),
+                CallbackQueryHandler(self.category_start, pattern='^' + str(CATEGORY) + '$'),
             ],
             states={
                 self.LEVEL_ONE: [
@@ -147,13 +174,21 @@ class NBotConversationCategory(NBotConversation):
                 # Return to second level menu
                 self.END: self.LEVEL_ONE,
             },
-            fallbacks=[]
+            fallbacks=[CallbackQueryHandler(self.level_up, pattern='^' + str(self.END) + '$')]
         )
 
     @staticmethod
     @check_context
-    def start(update: Update, context: NBotContext) -> None:
-        update.message.reply_text(text='text')
+    def category_start(update: Update, context: NBotContext) -> None:
+        logger.info("{} - Category started".format(context.username))
+        text = 'Choose db type to work with:'
+        buttons = [
+            [InlineKeyboardButton(text=t, callback_data=t) for t in context.db_container.types]
+        ]
+
+        update.callback_query.answer()
+        update.callback_query.edit_message_text(
+            text=text, reply_markup=InlineKeyboardMarkup(buttons))
         return NBotConversationCategory.END
 
 
@@ -280,6 +315,6 @@ class NBotConversationNotion(NBotConversation):
     @staticmethod
     @check_context
     def level_up(update: Update, context: NBotContext) -> None:
-        logger.info("level up!")
+        logger.info("{} - Level up".format(context.username))
         NBotConversationMain.start(update=update, context=context)
         return NBotConversationNotion.END

@@ -43,6 +43,7 @@ class NBotLinkDB(NBotCV):
         self._categories = {}
 
     def save(self, link, status="To Do"):
+        logger.info("saving to notion Link type {}".format(link))
         link = NBotLink(link)
         row = self.row
         row.name = link.title

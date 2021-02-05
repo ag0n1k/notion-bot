@@ -1,5 +1,5 @@
 from notion.client import NotionClient
-from notion.collection import CollectionView
+from notion.collection import CollectionView, CollectionRowBlock
 from utils import MetaSingleton
 from typing import Dict, List
 
@@ -25,10 +25,10 @@ class NBotCV(object):
         if not self.connected:
             self.cv = self.notion_client.connect(self._notion_link)
 
-    def save(self, *args, **kwargs) -> str:
+    def save(self, link, status="To Do") -> str:
         raise NotImplementedError()
 
-    def check_domain(self, domain) -> (str, None):
+    def get_category_by_domain(self, domain) -> (str, None):
         for name, domains in self._categories.items():
             if domain in domains:
                 return name
@@ -65,7 +65,7 @@ class NBotCV(object):
         return hasattr(self, 'cv')
 
     @property
-    def row(self):
+    def row(self) -> CollectionRowBlock:
         return self.cv.collection.add_row()
 
     @property

@@ -1,4 +1,5 @@
 from telegram import InlineKeyboardButton, Update, InlineKeyboardMarkup, ReplyKeyboardMarkup
+from telegram import MessageEntity
 from telegram.ext import (
     Updater,
     CommandHandler,
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 class NBotConversation:
     END = ConversationHandler.END
     conversation: ConversationHandler
-    (LEVEL_ONE, LEVEL_TWO) = map(chr, range(0, 2))
+    (STOP, LEVEL_ONE, LEVEL_TWO) = map(chr, range(0, 3))
 
     @staticmethod
     def start(update: Update, context: NBotContext) -> None:
@@ -60,14 +61,18 @@ class NBotConversationMain(NBotConversation):
             entry_points=[
                 CommandHandler('start', self.start),
                 CommandHandler('configure', self.start),
-                MessageHandler(Filters.all, self.process),
+                MessageHandler(Filters.all, self.default_process),
+                MessageHandler(Filters.forwarded, self.forward_process),
             ],
             states={
                 self.LEVEL_ONE: [
                     self.conv_category.conversation,
                     self.conv_notion.conversation,
                     CallbackQueryHandler(self.stop, pattern='^' + str(ConversationHandler.END) + '$'),
-
+                ],
+                self.STOP: [
+                    CallbackQueryHandler(self.stop, pattern='^' + str(ConversationHandler.END) + '$'),
+                    MessageHandler(Filters.all, self.stop),
                 ],
                 CATEGORY: [],
                 NOTION: []
@@ -89,11 +94,40 @@ class NBotConversationMain(NBotConversation):
 
         return NBotConversationMain.LEVEL_ONE
 
+    def get_links(self, message):
+        if message.caption:
+            entities = message.caption_entities
+            text = message.caption
+        else:
+            entities = message.entities
+            text = message.text
+        return self.parse_links(entities=entities, text=text)
+
+    def parse_links(self, entities, text):
+        res = set()
+        for entity in entities:
+            if entity.type == 'text_link':
+                res.add(entity.url)
+            elif entity.type == 'url':
+                res.add(text[entity.offset:entity.offset + entity.length])
+            else:
+                print('got unknown type: ', entity.type)
+        return res
+
     @staticmethod
     @check_context
-    def process(update: Update, context: NBotContext) -> None:
-        update.message.reply_text(text=update.message.text + " " + str(context.__dict__))
-        return NBotConversationMain.END
+    def default_process(update: Update, context: NBotContext) -> None:
+        update.message.reply_text(
+            text=update.message.text + " default " + str(context.__dict__)
+        )
+        return NBotConversationMain.STOP
+
+    @staticmethod
+    @check_context
+    def forward_process(update: Update, context: NBotContext) -> None:
+        update.message.reply_text(
+            text="Got '''\n" + update.message.text + "'''\nIt's interesing. But not implemented...")
+        return NBotConversationMain.STOP
 
 
 class NBotConversationCategory(NBotConversation):

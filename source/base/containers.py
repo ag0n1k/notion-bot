@@ -28,7 +28,7 @@ class NBotDBContainer:
 
     def get_type(self, domain: str) -> (NBotCV, None):
         for item in self._dbs.values():
-            if item.check_domain(domain):
+            if item.get_category_by_domain(domain):
                 return item
         return None
 

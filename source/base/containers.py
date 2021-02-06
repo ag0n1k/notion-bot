@@ -23,14 +23,21 @@ class NBotDBContainer:
         }
 
     def process(self, link: str) -> (str, None):
-        typ = self.get_type(get_domain(link))
+        typ = self.get_type_by_domain(get_domain(link))
         return typ.save(link) if typ else None
 
-    def get_type(self, domain: str) -> (NBotCV, None):
+    def get_type_by_domain(self, domain: str) -> (NBotCV, None):
         for item in self._dbs.values():
             if item.get_category_by_domain(domain):
                 return item
         return None
+
+    def get_type_by_category(self, category: str) -> (NBotCV, None):
+        for item in self._dbs.values():
+            if category in item.categories:
+                return item
+        return None
+
 
     def get(self, db_type: str, create_if_not_exists=False) -> NBotCV:
         if not self._dbs.get(db_type, None) and create_if_not_exists:

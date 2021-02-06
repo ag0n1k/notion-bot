@@ -175,7 +175,7 @@ class NBotConversationCategory(NBotConversation):
             ],
             states={
                 self.CHOOSE_CATEGORY: [
-                    CallbackQueryHandler(self.update_type),
+                    CallbackQueryHandler(self.update_category),
                     MessageHandler(Filters.all, self.choose_type),
                 ],
                 self.CHOOSE_DB: [
@@ -219,6 +219,15 @@ class NBotConversationCategory(NBotConversation):
         context.category_buffer = update.callback_query.data
         context.db_container.update_categories()
         return NBotConversation.END
+
+    @staticmethod
+    @check_context
+    def update_category(update: Update, context: NBotContext) -> None:
+        logger.info("{} - update category {}".format(context.username, update.callback_query.data))
+        context.category_buffer = update.callback_query.data
+        db_type = context.db_container.get_type_by_category(update.callback_query.data)
+        update.callback_query.data = db_type.db_type
+        return NBotConversationCategory.update_type(update=update, context=context)
 
     @staticmethod
     @check_context

@@ -1,17 +1,10 @@
-from notion.client import NotionClient
-from base.utils import MetaSingleton
+from utils import MetaSingleton
 import boto3
 from botocore import exceptions as bexc
-import time
 import json
+import logging
 
-
-class NBotClient(NotionClient, metaclass=MetaSingleton):
-    def __init__(self, token):
-        super().__init__(token_v2=token)
-
-    def connect(self, link):
-        return self.get_collection_view(link)
+logger = logging.getLogger(__name__)
 
 
 class NBotS3ClientError(Exception):
@@ -23,7 +16,8 @@ class NBotS3Client(metaclass=MetaSingleton):
                  bucket='notion-link-care',
                  service_name='s3',
                  endpoint_url='https://storage.yandexcloud.net',
-                 storage_class='STANDARD'):
+                 storage_class='STANDARD',
+                 key_template="nbot_{user}.json"):
         self.service_name = service_name
         self.endpoint_url = endpoint_url
         self.bucket = bucket
@@ -33,7 +27,7 @@ class NBotS3Client(metaclass=MetaSingleton):
             service_name=self.service_name,
             endpoint_url=self.endpoint_url
         )
-        self.key_template = "nbot_{user}.json"
+        self.key_template = key_template
 
     def put(self, user, dict_value):
         return self.put_string(
@@ -67,7 +61,8 @@ class NBotS3Client(metaclass=MetaSingleton):
         except bexc.ClientError as e:
             if e.response['Error']['Code'] == "404":
                 return False
-            raise NBotS3ClientError
+            logger.error("Check s3 object failed", exc_info=True)
+            raise NBotS3ClientError(e)
         return True
 
     def _get_object(self, key):

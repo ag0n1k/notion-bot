@@ -38,7 +38,6 @@ class NBotDBContainer:
                 return item
         return None
 
-
     def get(self, db_type: str, create_if_not_exists=False) -> NBotCV:
         if not self._dbs.get(db_type, None) and create_if_not_exists:
             self.create(db_type)
@@ -51,7 +50,7 @@ class NBotDBContainer:
         domains = [get_domain(link=link) for link in links]
         logger.info("Updating {} with {}:{}".format(db_type, category, domains))
         typ = self.get(db_type, create_if_not_exists=True)
-        typ.categories = {category: domains}
+        typ.categories = dict({category: domains})
 
     def get_categories(self):
         res = []

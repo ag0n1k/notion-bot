@@ -2,7 +2,9 @@ from notion.client import NotionClient
 from notion.collection import CollectionView, CollectionRowBlock
 from utils import MetaSingleton
 from typing import Dict, List
+import logging
 
+logger = logging.getLogger(__name__)
 
 class NBotClient(NotionClient, metaclass=MetaSingleton):
     def __init__(self, token=None):
@@ -34,15 +36,26 @@ class NBotCV(object):
                 return name
         return None
 
+    def get_domains(self, category: str) -> (List, None):
+        if self._categories.get(category, None):
+            return self._categories[category]
+        return None
+
     @property
     def categories(self) -> List[str]:
         return [k for k in self._categories.keys()]
 
     @categories.setter
     def categories(self, value: Dict[str, List[str]]):
+        logger.info("Current state {} update with {}".format(self._categories, value))
         # TODO merge dicts...
         # cat = self._categories.get(value.popitem()[0], None)
-        self._categories.update(value)
+        for k, v in value.items():
+            current_value = self._categories.get(k, [])
+            logger.info("Current state for {} is {} update {}".format(k, current_value, v))
+            current_value.extend(v)
+            self._categories.update({k: current_value})
+        logger.info("Current state {}".format(self._categories))
 
     @property
     def db_type(self):

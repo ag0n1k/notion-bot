@@ -22,6 +22,7 @@ class NBotConversation:
     END = ConversationHandler.END
     conversation: ConversationHandler
     (
+        STORE,
         CATEGORY,
         NOTION,
         STOP,
@@ -30,11 +31,13 @@ class NBotConversation:
         LEVEL_TWO,
         CHOOSE_DB,
         CHOOSE_CATEGORY,
+        UPDATE_CATEGORY,
         SET,
         REMOVE,
         ACTION,
-        GET
-     ) = range(0, 12)
+        GET,
+        DOMAIN
+     ) = range(0, 15)
 
     @staticmethod
     def start(update: Update, context: NBotContext) -> None:
@@ -78,9 +81,9 @@ class NBotConversation:
 
     @staticmethod
     @check_context
-    def level_up(update: Update, context: NBotContext) -> None:
+    def level_up(update: Update, context: NBotContext, text="Level UPPED") -> None:
         logger.info("{} - Level up".format(context.username))
-        NBotConversationMain.start(update=update, context=context)
+        NBotConversationMain.start(update=update, context=context, text=text)
         return NBotConversationNotion.END
 
 
@@ -100,16 +103,19 @@ class NBotConversationMain(NBotConversation):
                 self.LEVEL_ONE: [
                     self.conv_category.conversation,
                     self.conv_notion.conversation,
-                    CallbackQueryHandler(self.stop, pattern='^' + str(ConversationHandler.END) + '$'),
+                    CallbackQueryHandler(self.stop, pattern='^' + str(self.END) + '$'),
                 ],
                 self.STOP: [
-                    CallbackQueryHandler(self.stop, pattern='^' + str(ConversationHandler.END) + '$'),
+                    CallbackQueryHandler(self.stop, pattern='^' + str(self.END) + '$'),
                     MessageHandler(Filters.all, self.stop),
                 ],
                 self.TYPE: [
                     self.conv_category.conversation,
                 ],
-                self.CATEGORY: [],
+                self.CATEGORY: [
+                    self.conv_category.conversation,
+                    CallbackQueryHandler(self.stop, pattern='^' + str(self.END) + '$'),
+                ],
                 self.NOTION: []
             },
             fallbacks=[],
@@ -120,9 +126,12 @@ class NBotConversationMain(NBotConversation):
     def start(update: Update, context: NBotContext, text='Welcome to the menu') -> None:
         buttons = [
             [
-                InlineKeyboardButton(text='Update Notion DB Links', callback_data=str(NOTION)),
-                InlineKeyboardButton(text='Check Store', callback_data=str(CATEGORY)),
-                InlineKeyboardButton(text='Close Menu', callback_data=str(ConversationHandler.END)),
+                InlineKeyboardButton(text='Update Notion', callback_data=str(NBotConversation.NOTION)),
+                InlineKeyboardButton(text='Check Store', callback_data=str(NBotConversation.STORE)),
+            ],
+            [
+                InlineKeyboardButton(text='Update Category', callback_data=str(NBotConversation.CATEGORY)),
+                InlineKeyboardButton(text='Close Menu', callback_data=str(NBotConversation.END)),
             ]
         ]
         if update.message:
@@ -171,18 +180,28 @@ class NBotConversationCategory(NBotConversation):
     def __init__(self):
         self.conversation = ConversationHandler(
             entry_points=[
-                CallbackQueryHandler(self.category_start, pattern='^' + str(CATEGORY) + '$'),
+                CallbackQueryHandler(self.store_start, pattern='^' + str(self.STORE) + '$'),
+                CallbackQueryHandler(self.category_start, pattern='^' + str(self.CATEGORY) + '$'),
             ],
             states={
+                self.UPDATE_CATEGORY: [
+                    CallbackQueryHandler(self.choose_action),
+                ],
                 self.CHOOSE_CATEGORY: [
                     CallbackQueryHandler(self.update_category),
-                    MessageHandler(Filters.all, self.choose_type),
+                    MessageHandler(Filters.all, self.choose_category),
                 ],
                 self.CHOOSE_DB: [
                     CallbackQueryHandler(self.update_type),
                     MessageHandler(Filters.all, self.create_type),
                 ],
                 self.LEVEL_ONE: [
+                    CallbackQueryHandler(self.stop, pattern='^' + str(self.END) + '$'),
+                ],
+                self.ACTION: [
+                    CallbackQueryHandler(self.print_domains, pattern='^' + str(self.GET) + '$'),
+                    CallbackQueryHandler(self.stop, pattern='^' + str(self.REMOVE) + '$'),
+                    CallbackQueryHandler(self.stop, pattern='^' + str(self.DOMAIN) + '$'),
                     CallbackQueryHandler(self.stop, pattern='^' + str(self.END) + '$'),
                 ],
             },
@@ -195,7 +214,7 @@ class NBotConversationCategory(NBotConversation):
 
     @staticmethod
     @check_context
-    def category_start(update: Update, context: NBotContext) -> None:
+    def store_start(update: Update, context: NBotContext) -> None:
         try:
             link = context.store.pop()
         except IndexError:
@@ -214,10 +233,82 @@ class NBotConversationCategory(NBotConversation):
 
     @staticmethod
     @check_context
-    def create_type(update: Update, context: NBotContext) -> None:
-        logger.info("{} - create type {}".format(context.username, update.callback_query.data))
+    def choose_action(update: Update, context: NBotContext) -> None:
         context.category_buffer = update.callback_query.data
-        context.db_container.update_categories()
+        buttons = [[
+            InlineKeyboardButton(text="Print", callback_data=str(NBotConversation.GET)),
+            InlineKeyboardButton(text="Remove", callback_data=str(NBotConversation.REMOVE)),
+            InlineKeyboardButton(text="Domains", callback_data=str(NBotConversation.DOMAIN)),
+            InlineKeyboardButton(text="Close", callback_data=str(NBotConversation.END)),
+        ]]
+        update.callback_query.edit_message_text(text="Choose action", reply_markup=InlineKeyboardMarkup(buttons))
+
+        return NBotConversation.ACTION
+
+    @staticmethod
+    @check_context
+    def choose_domain(update: Update, context: NBotContext) -> None:
+        text = "Choose action"
+        typ = context.db_container.get_type_by_category(context.category_buffer)
+        buttons = [
+            [InlineKeyboardButton(text=d, callback_data=d) for d in typ.get_domains(context.category_buffer)]
+        ]
+        update.callback_query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
+        return NBotConversation.CHOOSE_CATEGORY
+
+    @staticmethod
+    @check_context
+    def choose_domain_action(update: Update, context: NBotContext) -> None:
+        text = "Choose action"
+        typ = context.db_container.get_type_by_category(context.category_buffer)
+        buttons = [
+            [InlineKeyboardButton(text=d, callback_data=d) for d in typ.get_domains(context.category_buffer)]
+        ]
+        update.callback_query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
+        return NBotConversation.CHOOSE_CATEGORY
+
+    @staticmethod
+    @check_context
+    def print_domains(update: Update, context: NBotContext) -> None:
+        typ = context.db_container.get_type_by_category(context.category_buffer)
+        NBotConversationMain.start(
+            update=update, context=context,
+            text="Domains:\n{}\nBack to menu...".format(typ.get_domains(context.category_buffer))
+        )
+        return NBotConversation.END
+
+
+    @staticmethod
+    @check_context
+    def category_start(update: Update, context: NBotContext) -> None:
+        text = "Choose category"
+        buttons = [
+            [InlineKeyboardButton(text=t, callback_data=t) for t in context.db_container.get_categories()]
+        ]
+
+        update.callback_query.answer()
+        update.callback_query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
+
+        return NBotConversation.UPDATE_CATEGORY
+
+
+    @staticmethod
+    @check_context
+    def create_type(update: Update, context: NBotContext) -> None:
+        if update.message:
+            db_type = update.message.text
+        else:
+            db_type = update.callback_query.data
+        logger.info("{} - create type {}".format(context.username, db_type))
+        context.db_container.update_categories(
+            db_type=db_type, category=context.category_buffer, links=[context.link_buffer])
+        NBotConversationMain.start(
+            update=update, context=context,
+            text="Link {}\nCategory={}, Type={}\nBack to menu...".format(context.link_buffer,
+                                                                         context.category_buffer, db_type)
+        )
+        context.link_buffer = ""
+        context.category_buffer = ""
         return NBotConversation.END
 
     @staticmethod
@@ -250,7 +341,7 @@ class NBotConversationCategory(NBotConversation):
 
     @staticmethod
     @check_context
-    def choose_type(update: Update, context: NBotContext) -> None:
+    def choose_category(update: Update, context: NBotContext) -> None:
         logger.info("{} - choose type {}".format(context.username, update.message.text))
         context.category_buffer = update.message.text
         return NBotConversationNotion.connect(update=update, context=context)
@@ -260,7 +351,7 @@ class NBotConversationNotion(NBotConversation):
     def __init__(self):
         self.conversation = ConversationHandler(
             entry_points=[
-                CallbackQueryHandler(self.connect, pattern='^' + str(NOTION) + '$'),
+                CallbackQueryHandler(self.connect, pattern='^' + str(self.NOTION) + '$'),
             ],
             states={
                 self.CHOOSE_DB: [

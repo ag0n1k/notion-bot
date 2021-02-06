@@ -66,7 +66,7 @@ class NBotConversation:
             elif entity.type == 'url':
                 res.add(text[entity.offset:entity.offset + entity.length])
             else:
-                print('got unknown type: ', entity.type)
+                logger.warning('got unknown type: {}'.format(entity.type))
         return res
 
     @staticmethod

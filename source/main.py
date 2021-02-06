@@ -1,4 +1,5 @@
 from base.converstations import NBotConversationMain
+from clients.notion_db import NBotClient
 from telegram.ext import Updater
 import logging
 import os
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def main():
+    client = NBotClient(token=os.environ.get('NOTION_TOKEN'))
     updater = Updater(os.getenv('TELEGRAM_TOKEN'), use_context=True)
     dispatcher = updater.dispatcher
 

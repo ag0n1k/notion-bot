@@ -40,11 +40,17 @@ class NBotDBContainer:
     def create(self, db_type: str):
         self._dbs.update({db_type: NBotEmptyDB(db_type=db_type)})
 
-    def update_categories(self, db_type: str, category: str, domains: list):
+    def update_categories(self, db_type: str, category: str, links: list):
+        domains = [get_domain(link=link) for link in links]
+        logger.info("Updating {} with {}:{}".format(db_type, category, domains))
         typ = self.get(db_type, create_if_not_exists=True)
-        if isinstance(domains, str):
-            domains = [domains]
         typ.categories = {category: domains}
+
+    def get_categories(self):
+        res = []
+        for i in self._dbs.values():
+            res.extend(i.categories)
+        return res
 
     def remove(self, db_type):
         if self._dbs.get(db_type, None):

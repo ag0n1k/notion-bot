@@ -1,5 +1,6 @@
 from telegram import InlineKeyboardButton, Update, InlineKeyboardMarkup, ReplyKeyboardMarkup
-from telegram import MessageEntity
+from utils import get_domain
+from telegram import parsemode
 from telegram.ext import (
     Updater,
     CommandHandler,
@@ -20,26 +21,24 @@ logger = logging.getLogger(__name__)
 class NBotConversation:
     END = ConversationHandler.END
     conversation: ConversationHandler
-    (STOP, TYPE, LEVEL_ONE, LEVEL_TWO) = range(0, 4)
+    (
+        CATEGORY,
+        NOTION,
+        STOP,
+        TYPE,
+        LEVEL_ONE,
+        LEVEL_TWO,
+        CHOOSE_DB,
+        CHOOSE_CATEGORY,
+        SET,
+        REMOVE,
+        ACTION,
+        GET
+     ) = range(0, 12)
 
     @staticmethod
     def start(update: Update, context: NBotContext) -> None:
         raise NotImplementedError()
-
-    # @staticmethod
-    # def send(update, text, reply_markup, otk):
-    #     if update.message:
-    #         update.message.reply_text(
-    #             text=text,
-    #             reply_markup=reply_markup,
-    #             one_time_keyboard=otk
-    #         )
-    #     else:
-    #         update.callback_query.edit_message_text(
-    #             text=text,
-    #             reply_markup=reply_markup,
-    #             one_time_keyboard=otk
-    #         )
 
     @staticmethod
     @check_context
@@ -77,6 +76,13 @@ class NBotConversation:
         NBotConversationMain.start(update=update, context=context)
         return NBotConversationNotion.END
 
+    @staticmethod
+    @check_context
+    def level_up(update: Update, context: NBotContext) -> None:
+        logger.info("{} - Level up".format(context.username))
+        NBotConversationMain.start(update=update, context=context)
+        return NBotConversationNotion.END
+
 
 class NBotConversationMain(NBotConversation):
     def __init__(self):
@@ -103,8 +109,8 @@ class NBotConversationMain(NBotConversation):
                 self.TYPE: [
                     self.conv_category.conversation,
                 ],
-                CATEGORY: [],
-                NOTION: []
+                self.CATEGORY: [],
+                self.NOTION: []
             },
             fallbacks=[],
         )
@@ -112,7 +118,6 @@ class NBotConversationMain(NBotConversation):
     @staticmethod
     @check_context
     def start(update: Update, context: NBotContext, text='Welcome to the menu') -> None:
-        logger.info("Start")
         buttons = [
             [
                 InlineKeyboardButton(text='Update Notion DB Links', callback_data=str(NOTION)),
@@ -121,10 +126,13 @@ class NBotConversationMain(NBotConversation):
             ]
         ]
         if update.message:
-            update.message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
+            update.message.reply_text(
+                text=text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=parsemode.constants.PARSEMODE_MARKDOWN
+            )
         else:
-            update.callback_query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
-        logger.info("Finish")
+            update.callback_query.edit_message_text(
+                text=text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=parsemode.constants.PARSEMODE_MARKDOWN
+            )
         return NBotConversationMain.LEVEL_ONE
 
     @staticmethod
@@ -166,8 +174,16 @@ class NBotConversationCategory(NBotConversation):
                 CallbackQueryHandler(self.category_start, pattern='^' + str(CATEGORY) + '$'),
             ],
             states={
+                self.CHOOSE_CATEGORY: [
+                    CallbackQueryHandler(self.update_type),
+                    MessageHandler(Filters.all, self.choose_type),
+                ],
+                self.CHOOSE_DB: [
+                    CallbackQueryHandler(self.update_type),
+                    MessageHandler(Filters.all, self.create_type),
+                ],
                 self.LEVEL_ONE: [
-                    CallbackQueryHandler(self.stop, pattern='^' + str(ConversationHandler.END) + '$'),
+                    CallbackQueryHandler(self.stop, pattern='^' + str(self.END) + '$'),
                 ],
             },
             map_to_parent={
@@ -180,28 +196,65 @@ class NBotConversationCategory(NBotConversation):
     @staticmethod
     @check_context
     def category_start(update: Update, context: NBotContext) -> None:
-        logger.info("{} - Category started".format(context.username))
-        text = 'Choose db type to work with:'
+        try:
+            link = context.store.pop()
+        except IndexError:
+            update.callback_query.edit_message_text(text="The link store is empty!")
+            return NBotConversationMain.END
+        context.link_buffer = link
+        text = "Choose type or send a new one of the link:\n{}".format(context.link_buffer)
         buttons = [
-            [InlineKeyboardButton(text=t, callback_data=t) for t in context.db_container.types]
+            [InlineKeyboardButton(text=t, callback_data=t) for t in context.db_container.get_categories()]
         ]
 
         update.callback_query.answer()
-        update.callback_query.edit_message_text(
-            text=text, reply_markup=InlineKeyboardMarkup(buttons))
-        return NBotConversationCategory.END
+        update.callback_query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
+
+        return NBotConversation.CHOOSE_CATEGORY
+
+    @staticmethod
+    @check_context
+    def create_type(update: Update, context: NBotContext) -> None:
+        logger.info("{} - create type {}".format(context.username, update.callback_query.data))
+        context.category_buffer = update.callback_query.data
+        context.db_container.update_categories()
+        return NBotConversation.END
+
+    @staticmethod
+    @check_context
+    def update_type(update: Update, context: NBotContext) -> None:
+        logger.info("{} - update type {}".format(context.username, update.callback_query.data))
+        logger.info("{} - update type context {}".format(context.username, context.__dict__))
+        context.db_container.update_categories(
+            db_type=update.callback_query.data, category=context.category_buffer, links=[context.link_buffer]
+        )
+        NBotConversationMain.start(update=update, context=context,
+                                   text="The link {} saved with\ntype = *{}*,category = *{}*.\n"
+                                        "Now *re-send* the link to me.".format(context.link_buffer,
+                                                                               context.category_buffer,
+                                                                               update.callback_query.data),
+                                   )
+        context.category_buffer = ""
+        context.link_buffer = ""
+        context.save()
+        return NBotConversation.END
+
+    @staticmethod
+    @check_context
+    def choose_type(update: Update, context: NBotContext) -> None:
+        logger.info("{} - choose type {}".format(context.username, update.message.text))
+        context.category_buffer = update.message.text
+        return NBotConversationNotion.connect(update=update, context=context)
 
 
 class NBotConversationNotion(NBotConversation):
-    (CHOOSE, SET, REMOVE, ACTION, GET) = range(5)
-
     def __init__(self):
         self.conversation = ConversationHandler(
             entry_points=[
                 CallbackQueryHandler(self.connect, pattern='^' + str(NOTION) + '$'),
             ],
             states={
-                self.CHOOSE: [
+                self.CHOOSE_DB: [
                     CallbackQueryHandler(self.get_action),
                     MessageHandler(Filters.all, self.get_type),
                 ],
@@ -232,16 +285,17 @@ class NBotConversationNotion(NBotConversation):
     @staticmethod
     @check_context
     def connect(update: Update, context: NBotContext) -> None:
-        text = 'Choose db type to work with:'
+        text = 'Choose db type:'
         buttons = [
             [InlineKeyboardButton(text=t, callback_data=t) for t in context.db_container.types]
         ]
-
-        update.callback_query.answer()
-        update.callback_query.edit_message_text(
-            text=text, reply_markup=InlineKeyboardMarkup(buttons))
-
-        return NBotConversationNotion.CHOOSE
+        if update.message:
+            update.message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
+        else:
+            update.callback_query.answer()
+            update.callback_query.edit_message_text(
+                text=text, reply_markup=InlineKeyboardMarkup(buttons))
+        return NBotConversationNotion.CHOOSE_DB
 
     @staticmethod
     @check_context
@@ -309,12 +363,5 @@ class NBotConversationNotion(NBotConversation):
         context.db_container.remove(context.cv_buffer.db_type)
         context.save()
 
-        NBotConversationMain.start(update=update, context=context)
-        return NBotConversationNotion.END
-
-    @staticmethod
-    @check_context
-    def level_up(update: Update, context: NBotContext) -> None:
-        logger.info("{} - Level up".format(context.username))
         NBotConversationMain.start(update=update, context=context)
         return NBotConversationNotion.END

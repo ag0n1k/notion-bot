@@ -1,4 +1,5 @@
 from base.constants import NOTION_LINK_TYPE
+from notion_scheme.decorators import notion_connect
 from bs4 import BeautifulSoup
 from clients.notion_db import NBotCV
 import requests
@@ -42,8 +43,9 @@ class NBotLinkDB(NBotCV):
         super().__init__()
         self._categories = {}
 
-    def save(self, link, status="To Do"):
-        logger.info("saving to notion Link type {}".format(link))
+    @notion_connect
+    def save(self, link: str, status="To Do"):
+        logger.info("Saving to notion: {}".format(link))
         link = NBotLink(link)
         row = self.row
         row.name = link.title

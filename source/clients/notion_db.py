@@ -35,8 +35,8 @@ class NBotCV(object):
         return None
 
     @property
-    def categories(self) -> Dict[str, List[str]]:
-        return self._categories
+    def categories(self) -> List[str]:
+        return [k for k in self._categories.keys()]
 
     @categories.setter
     def categories(self, value: Dict[str, List[str]]):

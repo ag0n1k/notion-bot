@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 class NBotContext:
     s3 = NBotS3Client(key_template="nbot_{user}_v2.json")
     cv_buffer: NBotCV
+    link_buffer: str
+    category_buffer: str
 
     def __init__(self, username):
         self.username = username

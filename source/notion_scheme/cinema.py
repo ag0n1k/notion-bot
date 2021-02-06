@@ -1,4 +1,5 @@
 from base.constants import NOTION_CINEMA_TYPE
+from notion_scheme.decorators import notion_connect
 from clients.notion_db import NBotCV
 
 
@@ -8,5 +9,6 @@ class NBotCinemaDB(NBotCV):
     }
     _db_type = NOTION_CINEMA_TYPE
 
-    def save(self, *args, **kwargs):
+    @notion_connect
+    def save(self, link, status="To Do", *args, **kwargs):
         pass

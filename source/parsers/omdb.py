@@ -14,9 +14,9 @@ class NBotIMDB(object, metaclass=MetaSingleton):
         self.key = api_key
         self.timeout = timeout
         self.type_map = {
-            'episode': self.parse_episode,
-            'movie': self.parse_movie,
-            'series': self.parse_series,
+            'episode': NBotIMDBEpisode,
+            'movie': NBotIMDBMovie,
+            'series': NBotIMDBSeries,
         }
 
     def get(self, imdb_id):
@@ -33,7 +33,8 @@ class NBotIMDB(object, metaclass=MetaSingleton):
     def parse(self):
         if not self.content:
             return
-        self.type_map[self.content["Type"]]()
+        item = self.type_map[self.content["Type"]]()
+        item.parse()
 
     def parse_movie(self):
         pass
@@ -66,7 +67,11 @@ class NBotIMDBElement:
     Type: str
     Response: str
 
-    def parse(self, attr):
+    def parse(self):
+        for i in ["Writer", "Actors", "Director"]:
+            self.parse_attr(i)
+
+    def parse_attr(self, attr):
         attribute = self.__getattribute__(attr)
         self.__setattr__(attr, [i.strip() for i in attribute.split(',')])
 

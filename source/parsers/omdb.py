@@ -1,11 +1,12 @@
 import requests
 import logging
 from clients.omdb import NBotOMDBClient
+from notion.collection import NotionDate
+from datetime import datetime
 from utils import get_omdb_id
 from typing import Dict, List
 
 logger = logging.getLogger(__name__)
-
 
 class NBotIMDBElement:
     Title: str
@@ -17,18 +18,18 @@ class NBotIMDBElement:
     Director: str
     Writer: str
     Actors: str
-    Plot: str
-    Language: str
+    # Plot: str
+    # Language: str
     Country: str
     Awards: str
-    Poster: str
-    Ratings: List[Dict]
+    # Poster: str
+    # Ratings: List[Dict]
     Metascore: str
     imdbRating: str
-    imdbVotes: str
-    imdbID: str
+    # imdbVotes: str
+    # imdbID: str
     Type: str
-    Response: str
+    # Response: str
     notion_types = dict(
         Year="select",
         Rated="select",
@@ -39,15 +40,32 @@ class NBotIMDBElement:
         Writer="multi_select",
         Country="multi_select",
         Type="select",
+        imdbRating="number",
+        Metascore="number"
     )
 
     def parse(self):
-        for i in ["Writer", "Actors", "Director"]:
+        for i in ["Writer", "Actors", "Director", "Genre"]:
             self.parse_attr(i)
+        self.parse_date("Released")
+        for i in ["imdbRating", "Metascore"]:
+            self.parse_number(i)
+
+    def parse_number(self, attr):
+        attribute = self.__getattribute__(attr)
+        try:
+            self.__setattr__(attr, float(attribute))
+        except ValueError:
+            logger.warning("Unable to parse {} setting to 0".format(attr))
+            self.__setattr__(attr, float(0))
 
     def parse_attr(self, attr):
         attribute = self.__getattribute__(attr)
         self.__setattr__(attr, [i.strip() for i in attribute.split(',')])
+
+    def parse_date(self, attr):
+        attribute = self.__getattribute__(attr)
+        self.__setattr__(attr, NotionDate(datetime.strptime(attribute, '%d %b %Y').date()))
 
 
 class NBotOMDBParser:
@@ -58,7 +76,7 @@ class NBotOMDBParser:
         self.session = requests.Session()
         self.type_map = {
             'episode': NBotIMDBEpisode,
-            'movie': NBotIMDBMovie,
+            'movie': NBotIMDBElement,
             'series': NBotIMDBSeries,
         }
         logger.info("{}".format(self.__dict__))
@@ -82,17 +100,15 @@ class NBotOMDBParser:
         if not self.content:
             return None
         item = self.type_map[self.content["Type"]]()
-        item.__dict__.update(self.content)
-        logger.info(item.__dict__)
+        for k, v in self.content.items():
+            if k in item.__annotations__.keys():
+                setattr(item, k, v)
+            else:
+                logger.info("Skipping {}".format(k))
         item.parse()
+        logger.info("Final item: {}".format(item.__dict__))
+        logger.info("Date {}".format(item.Released.__dict__))
         return item
-
-
-class NBotIMDBMovie(NBotIMDBElement):
-    DVD: str
-    BoxOffice: str
-    Production: str
-    Website: str
 
 
 class NBotIMDBSeries(NBotIMDBElement):

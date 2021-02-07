@@ -1,5 +1,5 @@
 requests~=2.25.1
-notion==0.0.28
+notion~=0.0.28
 bs4~=0.0.1
 beautifulsoup4~=4.9.3
 python-telegram-bot~=13.1

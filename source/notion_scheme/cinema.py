@@ -30,10 +30,6 @@ class NBotCinemaDB(NBotCV):
                 except Exception:
                     logger.error("Unable to update collection with id={}, value={}".format(id_, value), exc_info=True)
                     continue
-            if isinstance(value, list):
-                value = value.pop()
-            else:
-                value = str(value)
             try:
                 setattr(row, id_.lower(), value)
             except Exception:

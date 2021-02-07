@@ -7,6 +7,9 @@ FROM python:3.8
 
 WORKDIR /source
 
+ADD notion-py.tar.gz .
+RUN python setup.py install
+
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 

@@ -6,6 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class NBotClient(NotionClient, metaclass=MetaSingleton):
     def __init__(self, token=None):
         super().__init__(token_v2=token)

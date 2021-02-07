@@ -4,7 +4,7 @@ from clients.omdb import NBotOMDBClient
 from notion.collection import NotionDate
 from datetime import datetime
 from utils import get_omdb_id
-from typing import Dict, List
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 

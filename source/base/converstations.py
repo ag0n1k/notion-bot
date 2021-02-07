@@ -1,16 +1,12 @@
-from telegram import InlineKeyboardButton, Update, InlineKeyboardMarkup, ReplyKeyboardMarkup
-from utils import get_domain
+from telegram import InlineKeyboardButton, Update, InlineKeyboardMarkup
 from telegram import parsemode
 from telegram.ext import (
-    Updater,
     CommandHandler,
     MessageHandler,
     Filters,
     ConversationHandler,
     CallbackQueryHandler,
-    CallbackContext,
 )
-from base.constants import *
 from base.decorators import check_context
 from context import NBotContext
 import logging

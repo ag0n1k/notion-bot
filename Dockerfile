@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.8-slim
 
 # ENV TELEGRAM_TOKEN
 # ENV NOTION_TOKEN
@@ -7,12 +7,12 @@ FROM python:3.8
 
 WORKDIR /source
 
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+
 ADD notion-py.tar.gz .
 RUN python setup.py install
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+COPY . .
 
-COPY source/ .
-
-CMD [ "python", "./main.py" ]
+CMD [ "python", "source/main.py" ]

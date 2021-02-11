@@ -8,6 +8,15 @@ from typing import Dict
 
 logger = logging.getLogger(__name__)
 
+
+def check_attr(func):
+    def wrapper(obj, attr):
+        if hasattr(obj, attr):
+            return func(obj, attr)
+        return
+    return wrapper
+
+
 class NBotIMDBElement:
     Title: str
     Year: str
@@ -51,6 +60,7 @@ class NBotIMDBElement:
         for i in ["imdbRating", "Metascore"]:
             self.parse_number(i)
 
+    @check_attr
     def parse_number(self, attr):
         attribute = self.__getattribute__(attr)
         try:
@@ -59,10 +69,12 @@ class NBotIMDBElement:
             logger.warning("Unable to parse {} setting to 0".format(attr))
             self.__setattr__(attr, float(0))
 
+    @check_attr
     def parse_attr(self, attr):
         attribute = self.__getattribute__(attr)
         self.__setattr__(attr, [i.strip() for i in attribute.split(',')])
 
+    @check_attr
     def parse_date(self, attr):
         attribute = self.__getattribute__(attr)
         self.__setattr__(attr, NotionDate(datetime.strptime(attribute, '%d %b %Y').date()))
@@ -107,15 +119,56 @@ class NBotOMDBParser:
                 logger.info("Skipping {}".format(k))
         item.parse()
         logger.info("Final item: {}".format(item.__dict__))
-        logger.info("Date {}".format(item.Released.__dict__))
         return item
 
 
 class NBotIMDBSeries(NBotIMDBElement):
+    Title: str
+    Year: str
+    Rated: str
+    Released: str
+    Runtime: str
+    Genre: str
+    Director: str
+    Writer: str
+    Actors: str
+    # Plot: str
+    # Language: str
+    Country: str
+    Awards: str
+    # Poster: str
+    # Ratings: List[Dict]
+    Metascore: str
+    imdbRating: str
+    # imdbVotes: str
+    # imdbID: str
+    Type: str
+    # Response: str
     totalSeasons: str
 
 
 class NBotIMDBEpisode(NBotIMDBElement):
+    Title: str
+    Year: str
+    Rated: str
+    Released: str
+    Runtime: str
+    Genre: str
+    Director: str
+    Writer: str
+    Actors: str
+    # Plot: str
+    # Language: str
+    Country: str
+    Awards: str
+    # Poster: str
+    # Ratings: List[Dict]
+    Metascore: str
+    imdbRating: str
+    # imdbVotes: str
+    # imdbID: str
+    Type: str
+    # Response: str
     Season: str
     Episode: str
     seriesID: str

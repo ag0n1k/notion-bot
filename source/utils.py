@@ -1,10 +1,22 @@
 from urllib.parse import urlparse
 from telegram.ext import ConversationHandler
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def get_domain(link):
     parsed_uri = urlparse(link)
     return parsed_uri.netloc.replace('www.', '')
+
+
+def get_omdb_id(link):
+    parsed_uri = urlparse(link)
+    try:
+        return list(filter(None, parsed_uri.path.split('/'))).pop()
+    except IndexError:
+        logger.error("Unable to get omdb id from {}".format(link), exc_info=True)
+        return None
 
 
 class MetaSingleton(type):

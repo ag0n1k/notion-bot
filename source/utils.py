@@ -1,4 +1,6 @@
 from urllib.parse import urlparse
+
+from telegram import InlineKeyboardButton
 from telegram.ext import ConversationHandler
 import logging
 
@@ -17,6 +19,18 @@ def get_omdb_id(link):
     except IndexError:
         logger.error("Unable to get omdb id from {}".format(link), exc_info=True)
         return None
+
+
+def create_buttons(_list: list, _length=3):
+    res = []
+    tmp = []
+    for i, t in enumerate(_list):
+        if (i + 1) % _length == 0:
+            res.append(tmp)
+            tmp = []
+        tmp.append(InlineKeyboardButton(text=t, callback_data=t))
+    res.append(tmp)
+    return res
 
 
 class MetaSingleton(type):

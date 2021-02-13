@@ -77,7 +77,10 @@ class NBotIMDBElement:
     @check_attr
     def parse_date(self, attr):
         attribute = self.__getattribute__(attr)
-        self.__setattr__(attr, NotionDate(datetime.strptime(attribute, '%d %b %Y').date()))
+        try:
+            self.__setattr__(attr, NotionDate(datetime.strptime(attribute, '%d %b %Y').date()))
+        except ValueError:
+            logger.error("Unable to parse date: {}".format(attr))
 
 
 class NBotOMDBParser:

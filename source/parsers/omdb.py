@@ -50,14 +50,16 @@ class NBotIMDBElement:
         Country="multi_select",
         Type="select",
         imdbRating="number",
-        Metascore="number"
+        Metascore="number",
+        Season="number",
+        Episode="number",
     )
 
     def parse(self):
-        for i in ["Writer", "Actors", "Director", "Genre"]:
+        for i in list(filter(lambda x: self.notion_types[x] == 'multi_select', self.notion_types.keys())):
             self.parse_attr(i)
         self.parse_date("Released")
-        for i in ["imdbRating", "Metascore"]:
+        for i in list(filter(lambda x: self.notion_types[x] == 'number', self.notion_types.keys())):
             self.parse_number(i)
 
     @check_attr

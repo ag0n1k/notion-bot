@@ -174,4 +174,3 @@ class NBotIMDBEpisode(NBotIMDBElement):
     # Response: str
     Season: str
     Episode: str
-    seriesID: str

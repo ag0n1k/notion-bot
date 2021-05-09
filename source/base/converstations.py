@@ -147,7 +147,8 @@ class NBotConversationMain(NBotConversation):
         for link in context.store_difference(NBotConversationMain.get_links(update.message)):
             notion_link = context.db_container.process(link=link)
             logger.info("{} - Processed {}, result {}".format(context.username, link, notion_link))
-            res.append(notion_link) if notion_link else res.append(link)  # if saved: link to notion, else original link
+            if not notion_link:
+                res.append(link)  # save original link in store
         context.store.extend(res)
         context.save()
         update.message.reply_text(text="Processed:\n{}".format("\n".join(res)))

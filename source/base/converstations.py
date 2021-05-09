@@ -9,6 +9,7 @@ from telegram.ext import (
 )
 from base.decorators import check_context
 from context import NBotContext
+from utils import create_buttons
 import logging
 
 logger = logging.getLogger(__name__)
@@ -282,7 +283,9 @@ class NBotConversationCategory(NBotConversation):
         buttons = [
             [InlineKeyboardButton(text=t, callback_data=t) for t in context.db_container.get_categories()]
         ]
-
+        logger.info(buttons)
+        buttons = create_buttons(context.db_container.get_categories(), 3)
+        logger.info(buttons)
         update.callback_query.answer()
         update.callback_query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
 

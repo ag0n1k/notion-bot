@@ -21,6 +21,7 @@ class NBotCinemaDB(NBotCV):
     def save(self, link, status="To Do", *args, **kwargs):
         row = self.row
         item = self._parser.get(link=link)
+        row.url = link
         for id_, value in item.__dict__.items():
             if id_.lower() not in [prop['id'] for prop in self.cv.collection.get_schema_properties()]:
                 try:

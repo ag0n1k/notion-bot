@@ -22,17 +22,5 @@ class NBotCinemaDB(NBotCV):
         row = self.row
         item = self._parser.get(link=link)
         row.url = link
-        for id_, value in item.__dict__.items():
-            if id_.lower() not in [prop['id'] for prop in self.cv.collection.get_schema_properties()]:
-                try:
-                    self.cv.collection.update_schema_properties({
-                        id_.lower(): dict(name=id_.lower(), type=item.notion_types.get(id_, "text"))
-                    })
-                except Exception:
-                    logger.error("Unable to update collection with id={}, value={}".format(id_, value), exc_info=True)
-                    continue
-            try:
-                setattr(row, id_.lower(), value)
-            except Exception:
-                logger.error("Could not save {}".format(id_), exc_info=True)
+        self.save_item(item=item, row=row)
         return row.get_browseable_url()

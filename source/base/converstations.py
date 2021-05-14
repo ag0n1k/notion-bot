@@ -104,9 +104,6 @@ class NBotConversationMain(NBotConversation):
                     CallbackQueryHandler(self.stop, pattern='^' + str(self.LEVEL_ONE) + '$'),
                     MessageHandler(Filters.all, self.stop),
                 ],
-                42: [
-                    CallbackQueryHandler(self.tests),
-                ],
                 self.STOP: [
                     CallbackQueryHandler(self.stop, pattern='^' + str(self.END) + '$'),
                     MessageHandler(Filters.all, self.stop),
@@ -154,10 +151,13 @@ class NBotConversationMain(NBotConversation):
             notion_link = context.db_container.process(link=link)
             logger.info("{} - Processed {}, result {}".format(context.username, link, notion_link))
             if not notion_link:
-                res.append(link)  # save original link in store
-        context.store.extend(res)
+                context.store.extend([link])
+                res.append(link)
+            else:
+                res.append(notion_link)
         context.save()
-        update.message.reply_text(text="Processed:\n{}".format("\n".join(res)))
+        update.message.reply_text(
+            text="Processed:\n{}".format("\n".join(res)))
         return NBotConversationMain.END
 
     @staticmethod

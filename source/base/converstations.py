@@ -42,13 +42,14 @@ class NBotConversation:
 
     @staticmethod
     @check_context
-    def stop(update: Update, context: NBotContext) -> None:
+    def stop(update: Update, context: NBotContext, text='Okay, bye') -> None:
         """End Conversation by command."""
-        text = 'Okay, bye.'
+
         if update.message:
             update.message.reply_text(text=text)
         else:
             update.callback_query.edit_message_text(text=text)
+        logger.info('end ... {}'.format(NBotConversation.END))
         return NBotConversation.END
 
     @staticmethod
@@ -92,7 +93,6 @@ class NBotConversationMain(NBotConversation):
             entry_points=[
                 CommandHandler('start', self.start),
                 CommandHandler('configure', self.start),
-                CommandHandler('process', self.store_process),
                 MessageHandler(Filters.all, self.default_process),
                 MessageHandler(Filters.forwarded, self.forward_process),
             ],
@@ -101,6 +101,8 @@ class NBotConversationMain(NBotConversation):
                     self.conv_category.conversation,
                     self.conv_notion.conversation,
                     CallbackQueryHandler(self.stop, pattern='^' + str(self.END) + '$'),
+                    CallbackQueryHandler(self.stop, pattern='^' + str(self.LEVEL_ONE) + '$'),
+                    MessageHandler(Filters.all, self.stop),
                 ],
                 self.STOP: [
                     CallbackQueryHandler(self.stop, pattern='^' + str(self.END) + '$'),
@@ -115,7 +117,7 @@ class NBotConversationMain(NBotConversation):
                 ],
                 self.NOTION: []
             },
-            fallbacks=[],
+            fallbacks=[CallbackQueryHandler(self.level_up, pattern='^' + str(self.END) + '$')]
         )
 
     @staticmethod
@@ -148,22 +150,15 @@ class NBotConversationMain(NBotConversation):
         for link in context.store_difference(NBotConversationMain.get_links(update.message)):
             notion_link = context.db_container.process(link=link)
             logger.info("{} - Processed {}, result {}".format(context.username, link, notion_link))
-            res.append(notion_link) if notion_link else res.append(link)  # if saved: link to notion, else original link
-        context.store.extend(res)
+            if not notion_link:
+                context.store.extend([link])
+                res.append(link)
+            else:
+                res.append(notion_link)
         context.save()
-        update.message.reply_text(text="Processed:\n{}".format("\n".join(res)))
+        update.message.reply_text(
+            text="Processed:\n{}".format("\n".join(res)))
         return NBotConversationMain.END
-
-    @staticmethod
-    @check_context
-    def store_process(update: Update, context: NBotContext) -> None:
-        try:
-            link = context.store.pop()
-        except IndexError:
-            update.message.reply_text(text="The link store is empty!")
-            return NBotConversationMain.END
-        update.message.reply_text(text="Choose type or send a new one of the link:\n{}".format(link))
-        return NBotConversationMain.STOP
 
     @staticmethod
     @check_context
@@ -194,6 +189,9 @@ class NBotConversationCategory(NBotConversation):
                 ],
                 self.LEVEL_ONE: [
                     CallbackQueryHandler(self.stop, pattern='^' + str(self.END) + '$'),
+                    CallbackQueryHandler(self.level_up, pattern='^' + str(self.END) + '$'),
+                    CallbackQueryHandler(self.level_up, pattern='^exit$'),
+                    MessageHandler(Filters.all, self.stop),
                 ],
                 self.ACTION: [
                     CallbackQueryHandler(self.print_domains, pattern='^' + str(self.GET) + '$'),
@@ -201,6 +199,11 @@ class NBotConversationCategory(NBotConversation):
                     CallbackQueryHandler(self.stop, pattern='^' + str(self.DOMAIN) + '$'),
                     CallbackQueryHandler(self.stop, pattern='^' + str(self.END) + '$'),
                 ],
+                self.END: [
+                    CallbackQueryHandler(self.stop, pattern='^' + str(self.END) + '$'),
+                    # CallbackQueryHandler(self.stop, pattern='^.*$'),
+                    MessageHandler(Filters.all, self.stop),
+                ]
             },
             map_to_parent={
                 # Return to second level menu
@@ -211,12 +214,29 @@ class NBotConversationCategory(NBotConversation):
 
     @staticmethod
     @check_context
+    def test(update: Update, context: NBotContext):
+        logger.info('test_')
+        return 55
+
+    @staticmethod
+    @check_context
     def store_start(update: Update, context: NBotContext) -> None:
         try:
+            logger.info(context.store)
             link = context.store.pop()
         except IndexError:
-            update.callback_query.edit_message_text(text="The link store is empty!")
-            return NBotConversationMain.END
+            buttons = [[InlineKeyboardButton(text='Exit', callback_data=str(NBotConversation.END))]]
+            if update.message:
+                update.message.reply_text(
+                    text='Store is empty', reply_markup=InlineKeyboardMarkup(buttons),
+                    parse_mode=parsemode.constants.PARSEMODE_MARKDOWN
+                )
+            else:
+                update.callback_query.edit_message_text(
+                    text='Store is empty', reply_markup=InlineKeyboardMarkup(buttons),
+                    parse_mode=parsemode.constants.PARSEMODE_MARKDOWN
+                )
+            return NBotConversation.LEVEL_ONE
         context.link_buffer = link
         text = "Choose type or send a new one of the link:\n{}".format(context.link_buffer)
         buttons = [

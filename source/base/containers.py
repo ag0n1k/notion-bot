@@ -2,6 +2,7 @@ from clients.notion_db import NBotCV
 from notion_scheme.cinema import NBotCinemaDB
 from notion_scheme.empty import NBotEmptyDB
 from notion_scheme.link import NBotLinkDB
+from notion_scheme.podcasts import NBotPodcastDB
 from base.constants import *
 from typing import Dict, List
 import logging
@@ -17,9 +18,11 @@ class NBotDBContainer:
     def __init__(self):
         self.cinema = NBotCinemaDB()
         self.link = NBotLinkDB()
+        self.podcast = NBotPodcastDB()
         self._dbs = {
             NOTION_LINK_TYPE: self.link,
             NOTION_CINEMA_TYPE: self.cinema,
+            NOTION_PODCAST_TYPE: self.podcast,
         }
 
     def process(self, link: str) -> (str, None):

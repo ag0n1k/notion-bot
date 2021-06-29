@@ -41,4 +41,3 @@ class NBotData:
         if not row:
             row = self.create(user)
         return row
-

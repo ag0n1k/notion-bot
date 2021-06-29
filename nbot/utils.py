@@ -1,7 +1,6 @@
 from urllib.parse import urlparse
 
 from telegram import InlineKeyboardButton
-from telegram.ext import ConversationHandler
 import logging
 
 logger = logging.getLogger(__name__)
@@ -40,8 +39,3 @@ class MetaSingleton(type):
         if cls not in cls._instances:
             cls._instances[cls] = super(MetaSingleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
-
-
-def done(update, context) -> int:
-    update.message.reply_text("Something went wrong...")
-    return ConversationHandler.END

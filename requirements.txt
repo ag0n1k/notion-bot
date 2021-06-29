@@ -4,3 +4,5 @@ beautifulsoup4~=4.9.3
 python-telegram-bot~=13.1
 cryptography==3.3.1
 # notion~=0.0.28
+
+# python3 -m pytest --cov-fail-under=70 tests/unit/ -vv --diff-type=split

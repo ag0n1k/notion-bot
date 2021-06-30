@@ -1,0 +1,15 @@
+name: Docker Image CI
+
+on:
+  release:
+    types: # This configuration does not affect the page_build event above
+      - created
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag ag0n1k/notion-bot:${GITHUB_REF}
+      - name: Push the Docker image
+        run: docker push ag0n1k/notion-bot:${GITHUB_REF}

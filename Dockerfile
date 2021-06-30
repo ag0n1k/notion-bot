@@ -13,4 +13,4 @@ RUN python setup.py install
 
 COPY . .
 
-CMD [ "python", "source/main.py" ]
+CMD [ "python", "nbot/main.py" ]

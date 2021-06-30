@@ -46,5 +46,5 @@ class NBotContext:
             self.username = body['username']
             self.db_container.json = body['db_container']
             self.store = body['store']
-        except KeyError as err:
+        except KeyError:
             logger.error("Got error on load", exc_info=True)

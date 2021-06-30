@@ -3,7 +3,7 @@ from notion_scheme.cinema import NBotCinemaDB
 from notion_scheme.empty import NBotEmptyDB
 from notion_scheme.link import NBotLinkDB
 from notion_scheme.podcasts import NBotPodcastDB
-from base.constants import *
+from base.constants import NOTION_LINK_TYPE, NOTION_CINEMA_TYPE, NOTION_PODCAST_TYPE
 from typing import Dict, List
 import logging
 
@@ -83,5 +83,5 @@ class NBotDBContainer:
                     self.create(k)
                 try:
                     self._dbs[k].json = v
-                except KeyError as e:
+                except KeyError:
                     logger.error("Got error on loading data for {}".format(k), exc_info=True)

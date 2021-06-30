@@ -77,12 +77,12 @@ class NBotConversation:
         NBotConversationMain.start(update=update, context=context)
         return NBotConversationNotion.END
 
-    @staticmethod
-    @check_context
-    def level_up(update: Update, context: NBotContext, text="Level UPPED") -> None:
-        logger.info("{} - Level up".format(context.username))
-        NBotConversationMain.start(update=update, context=context, text=text)
-        return NBotConversationNotion.END
+    # @staticmethod
+    # @check_context
+    # def level_up(update: Update, context: NBotContext, text="Level UPPED") -> None:
+    #     logger.info("{} - Level up".format(context.username))
+    #     NBotConversationMain.start(update=update, context=context, text=text)
+    #     return NBotConversationNotion.END
 
 
 class NBotConversationMain(NBotConversation):
@@ -294,7 +294,6 @@ class NBotConversationCategory(NBotConversation):
         )
         return NBotConversation.END
 
-
     @staticmethod
     @check_context
     def category_start(update: Update, context: NBotContext) -> None:
@@ -309,7 +308,6 @@ class NBotConversationCategory(NBotConversation):
         update.callback_query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
 
         return NBotConversation.UPDATE_CATEGORY
-
 
     @staticmethod
     @check_context

@@ -35,10 +35,5 @@ jobs:
             NOTION_TOKEN,OMDB_API_KEY,TELEGRAM_TOKEN
           script: |
             docker stop $(docker ps -a -q)
-            # docker system prune -a
             docker pull ag0n1k/notion-bot:${GITHUB_REF##*/}
-            docker run \
-              -e NOTION_TOKEN="${NOTION_TOKEN}" \
-              -e OMDB_API_KEY="${OMDB_API_KEY}" \
-              -e TELEGRAM_TOKEN="${TELEGRAM_TOKEN}" \
-              -dit ag0n1k/notion-bot:${GITHUB_REF##*/}
+            docker run -e NOTION_TOKEN="${NOTION_TOKEN}" -e OMDB_API_KEY="${OMDB_API_KEY}" -e TELEGRAM_TOKEN="${TELEGRAM_TOKEN}" -dit ag0n1k/notion-bot:${GITHUB_REF##*/}

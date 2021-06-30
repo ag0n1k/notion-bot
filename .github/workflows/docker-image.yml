@@ -19,10 +19,7 @@ jobs:
       - name: Push the Docker image
         run: |
           docker push ag0n1k/notion-bot:${GITHUB_REF##*/}
-          docker push ag0n1k/notion-bot:latest
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
+
       - name: Deploy via SSH action
         uses: appleboy/ssh-action@master
         env:
@@ -37,7 +34,7 @@ jobs:
           envs:
             NOTION_TOKEN,OMDB_API_KEY,TELEGRAM_TOKEN
           script: |
-            docker kill $(docker ps -q)
+            docker stop $(docker ps -a -q)
             docker system prune -a
             docker pull ag0n1k/notion-bot:${GITHUB_REF##*/}
             docker run \

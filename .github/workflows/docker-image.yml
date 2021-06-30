@@ -27,12 +27,13 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.RSA_KEY }}
           port: ${{ secrets.PORT }}
-          envs: TAG, GITHUB_REF
+          envs: GITHUB_REF
           script: |
-            cat <<EOF > /root/.env
-            NOTION_TOKEN="${{ secrets.NOTION_TOKEN }}"
-            OMDB_API_KEY="${{ secrets.OMDB_API_KEY }}"
-            TELEGRAM_TOKEN="${{ secrets.TELEGRAM_TOKEN }}"
-            TAG="${GITHUB_REF##*/}"
-            EOF
-            systemctl restart nbot
+            docker stop $(docker ps -a -q)
+            # docker system prune -a
+            docker pull ag0n1k/notion-bot:${GITHUB_REF##*/}
+            docker run \
+              -e NOTION_TOKEN="${{ secrets.NOTION_TOKEN }}" \
+              -e OMDB_API_KEY="${{ secrets.OMDB_API_KEY }}" \
+              -e TELEGRAM_TOKEN="${{ secrets.TELEGRAM_TOKEN }}" \
+              -dit ag0n1k/notion-bot:${GITHUB_REF##*/}          

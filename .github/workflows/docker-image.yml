@@ -24,13 +24,12 @@ jobs:
         uses: appleboy/ssh-action@master
         env: 
           TAG:  ${GITHUB_REF##*/}
-          TAG2: ${{ GITHUB_REF##*/ }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.RSA_KEY }}
           port: ${{ secrets.PORT }}
-          envs: TAG, TAG2
+          envs: TAG
           script: |
             cat <<EOF > /root/.env
             NOTION_TOKEN="${{ secrets.NOTION_TOKEN }}"

@@ -22,19 +22,17 @@ jobs:
 
       - name: Deploy via SSH action
         uses: appleboy/ssh-action@master
-        env: 
-          TAG:  ${GITHUB_REF##*/}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.RSA_KEY }}
           port: ${{ secrets.PORT }}
-          envs: TAG
+          envs: TAG, GITHUB_REF
           script: |
             cat <<EOF > /root/.env
             NOTION_TOKEN="${{ secrets.NOTION_TOKEN }}"
             OMDB_API_KEY="${{ secrets.OMDB_API_KEY }}"
             TELEGRAM_TOKEN="${{ secrets.TELEGRAM_TOKEN }}"
-            TAG="${TAG}"
+            TAG="${GITHUB_REF##*/}"
             EOF
             systemctl restart nbot

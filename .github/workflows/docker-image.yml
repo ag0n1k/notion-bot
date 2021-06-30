@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Docker Image CI/CD
 
 on:
   release:
@@ -20,3 +20,29 @@ jobs:
         run: |
           docker push ag0n1k/notion-bot:${GITHUB_REF##*/}
           docker push ag0n1k/notion-bot:latest
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH action
+        uses: appleboy/ssh-action@master
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.RSA_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            # Stop all running Docker Containers
+            docker kill $(docker ps -q)
+
+            # Free up space
+            docker system prune -a
+
+            # Pull the Docker Image
+            docker pull ag0n1k/notion-bot:${GITHUB_REF##*/}
+
+            # Run a new container from a new image
+            docker run -dit ag0n1k/notion-bot:${GITHUB_REF##*/}

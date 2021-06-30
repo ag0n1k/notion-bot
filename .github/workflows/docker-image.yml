@@ -10,6 +10,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag ag0n1k/notion-bot:${GITHUB_REF}
+        run: docker build . --file Dockerfile --tag ag0n1k/notion-bot:${GITHUB_REF##*/}
       - name: Push the Docker image
-        run: docker push ag0n1k/notion-bot:${GITHUB_REF}
+        run: docker push ag0n1k/notion-bot:${GITHUB_REF##*/}

@@ -3,7 +3,7 @@ from datetime import datetime
 from notion.client import NotionClient
 from notion.collection import CollectionView, CollectionRowBlock, NotionDate
 from utils import MetaSingleton
-from typing import Dict, List, NamedTuple
+from typing import Dict, List, Set
 import logging
 
 logger = logging.getLogger(__name__)
@@ -65,6 +65,15 @@ class NBotCategory:
     domains: set[str] = field(default_factory=lambda: set())
     status: str = "To Do"
 
+    def __str__(self):
+        return self.name
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self, other):
+        return self.name == other.name
+
     @property
     def json(self):
         return dict(
@@ -85,7 +94,7 @@ class NBotCV(object):
     props: List
     _db_type = ""
     _notion_link = ""
-    _categories: List[NBotCategory]
+    _categories: Set[NBotCategory]
 
     def __init__(self):
         self.notion_client = NBotClient()
@@ -151,7 +160,7 @@ class NBotCV(object):
         for item in items:
             category = self.get_category_by_name(item['name'])
             category.json = item
-            self._categories.append(category)
+            self._categories.add(category)
         logger.info("Current state {}".format(self._categories))
 
     @property

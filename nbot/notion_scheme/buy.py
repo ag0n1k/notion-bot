@@ -7,8 +7,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class NBotPodcastDB(NBotCV):
-    _categories = [
+class NBotBuyDB(NBotCV):
+    _categories = {
         NBotCategory(
             name="Buy",
             domains={
@@ -22,9 +22,13 @@ class NBotPodcastDB(NBotCV):
                 "laredoute.ru"
             },
             status="Wait"
-        )
-    ]
+        ),
+    }
+
     _db_type = NOTION_BUY_TYPE
+
+    def __init__(self):
+        super().__init__()
 
     @notion_connect
     def save(self, link: str, status="To Do"):
@@ -34,5 +38,5 @@ class NBotPodcastDB(NBotCV):
         row.name = link.title
         row.url = link.link
         row.domain = link.domain
-        row.status = self._categories[0].status
+        row.status = list(self._categories)[0].status
         return row.get_browseable_url()

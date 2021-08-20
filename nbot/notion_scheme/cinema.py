@@ -8,13 +8,13 @@ logger = logging.getLogger(__name__)
 
 
 class NBotCinemaDB(NBotCV):
-    _categories = [
+    _categories = {
         NBotCategory(
             name="Movie",
             domains={"m.imdb.com", "imdb.com"},
             status="To Do"
         )
-    ]
+    }
     _db_type = NOTION_CINEMA_TYPE
 
     def __init__(self):

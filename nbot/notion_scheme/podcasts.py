@@ -22,13 +22,13 @@ class NBotPodcastElement(NBotElement):
 
 
 class NBotPodcastDB(NBotCV):
-    _categories = [
+    _categories = {
         NBotCategory(
             name="Podcasts",
             domains={"podcasts.google.com", "podcasts.apple.com", "music.yandex.ru"},
             status="Listening"
         )
-    ]
+    }
     _db_type = NOTION_PODCAST_TYPE
 
     def __init__(self):

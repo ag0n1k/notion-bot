@@ -1,5 +1,5 @@
-from clients.notion_db import NBotCV, NBotCategory
-from notion_scheme.buy import NBotPodcastDB
+from clients.notion_db import NBotCV
+from notion_scheme.buy import NBotBuyDB
 from notion_scheme.cinema import NBotCinemaDB
 from notion_scheme.empty import NBotEmptyDB
 from notion_scheme.link import NBotLinkDB
@@ -20,7 +20,7 @@ class NBotDBContainer:
         self.cinema = NBotCinemaDB()
         self.link = NBotLinkDB()
         self.podcast = NBotPodcastDB()
-        self.buy = NBotPodcastDB()
+        self.buy = NBotBuyDB()
         self._dbs = {
             NOTION_CINEMA_TYPE: self.cinema,
             NOTION_LINK_TYPE: self.link,

@@ -41,7 +41,7 @@ class NBotLinkDB(NBotCV):
 
     def __init__(self):
         super().__init__()
-        self._categories = []
+        self._categories = set()
 
     @notion_connect
     def save(self, link: str, status="To Do"):

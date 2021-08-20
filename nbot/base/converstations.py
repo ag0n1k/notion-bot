@@ -135,11 +135,11 @@ class NBotConversationMain(NBotConversation):
         ]
         if update.message:
             update.message.reply_text(
-                text=text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=parsemode.constants.PARSEMODE_MARKDOWN
+                text=text, reply_markup=InlineKeyboardMarkup(buttons)
             )
         else:
             update.callback_query.edit_message_text(
-                text=text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=parsemode.constants.PARSEMODE_MARKDOWN
+                text=text, reply_markup=InlineKeyboardMarkup(buttons)
             )
         return NBotConversationMain.LEVEL_ONE
 
@@ -229,12 +229,10 @@ class NBotConversationCategory(NBotConversation):
             if update.message:
                 update.message.reply_text(
                     text='Store is empty', reply_markup=InlineKeyboardMarkup(buttons),
-                    parse_mode=parsemode.constants.PARSEMODE_MARKDOWN
                 )
             else:
                 update.callback_query.edit_message_text(
                     text='Store is empty', reply_markup=InlineKeyboardMarkup(buttons),
-                    parse_mode=parsemode.constants.PARSEMODE_MARKDOWN
                 )
             return NBotConversation.LEVEL_ONE
         context.link_buffer = link

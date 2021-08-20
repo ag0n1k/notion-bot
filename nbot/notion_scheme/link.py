@@ -41,7 +41,7 @@ class NBotLinkDB(NBotCV):
 
     def __init__(self):
         super().__init__()
-        self._categories = {}
+        self._categories = set()
 
     @notion_connect
     def save(self, link: str, status="To Do"):
@@ -52,5 +52,5 @@ class NBotLinkDB(NBotCV):
         row.url = link.link
         row.domain = link.domain
         row.category = self.get_category_by_domain(link.domain)
-        row.status = status
+        row.status = self.get_status_by_category(row.category) or status
         return row.get_browseable_url()

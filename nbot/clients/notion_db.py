@@ -1,8 +1,9 @@
+from dataclasses import dataclass, field
 from datetime import datetime
 from notion.client import NotionClient
 from notion.collection import CollectionView, CollectionRowBlock, NotionDate
 from utils import MetaSingleton
-from typing import Dict, List
+from typing import Dict, List, Set
 import logging
 
 logger = logging.getLogger(__name__)
@@ -58,12 +59,42 @@ class NBotElement:
             logger.error("Unable to parse date: {}".format(attr))
 
 
+@dataclass
+class NBotCategory:
+    name: str = ""
+    domains: set[str] = field(default_factory=lambda: set())
+    status: str = "To Do"
+
+    def __str__(self):
+        return self.name
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self, other):
+        return self.name == other.name
+
+    @property
+    def json(self):
+        return dict(
+            name=self.name,
+            domains=list(self.domains),
+            status=self.status,
+        )
+
+    @json.setter
+    def json(self, body):
+        self.name = body['name']
+        self.domains.update(body.get('domains'), set())
+        self.status = body.get('status', 'To Do')
+
+
 class NBotCV(object):
     cv: CollectionView
     props: List
     _db_type = ""
     _notion_link = ""
-    _categories: Dict[str, List[str]]
+    _categories: Set[NBotCategory]
 
     def __init__(self):
         self.notion_client = NBotClient()
@@ -76,16 +107,31 @@ class NBotCV(object):
     def save(self, link, status="To Do") -> str:
         raise NotImplementedError()
 
+    def get_status_by_category(self, name) -> (str, None):
+        c = self.get_category_by_name(name, return_none=True)
+        if c:
+            return c.status
+        return 'To Do'
+
     def get_category_by_domain(self, domain) -> (str, None):
-        for name, domains in self._categories.items():
-            if domain in domains:
-                return name
+        for category in self._categories:
+            if domain in category.domains:
+                return category.name
         return None
 
     def get_domains(self, category: str) -> (List, None):
-        if self._categories.get(category, None):
-            return self._categories[category]
+        c = self.get_category_by_name(category, return_none=True)
+        if c:
+            return c.domains
         return None
+
+    def get_category_by_name(self, name, return_none=False):
+        res = [c for c in self._categories if (name == c.name)]
+        if not res:
+            if return_none:
+                return None
+            return NBotCategory()
+        return res[0]
 
     def save_item(self, item: NBotElement, row: CollectionRowBlock):
         for id_, value in item.__dict__.items():
@@ -104,18 +150,17 @@ class NBotCV(object):
 
     @property
     def categories(self) -> List[str]:
-        return [k for k in self._categories.keys()]
+        return [k.name for k in self._categories]
 
     @categories.setter
-    def categories(self, value: Dict[str, List[str]]):
-        logger.info("Current state {} update with {}".format(self._categories, value))
+    def categories(self, items: List[Dict]):
+        logger.info("Current state {} update with {}".format(self._categories, items))
         # TODO merge dicts...
         # cat = self._categories.get(value.popitem()[0], None)
-        for k, v in value.items():
-            current_value = self._categories.get(k, [])
-            logger.info("Current state for {} is {} update {}".format(k, current_value, v))
-            current_value.extend(v)
-            self._categories.update({k: current_value})
+        for item in items:
+            category = self.get_category_by_name(item['name'])
+            category.json = item
+            self._categories.add(category)
         logger.info("Current state {}".format(self._categories))
 
     @property
@@ -147,11 +192,11 @@ class NBotCV(object):
         return dict(
             link=self._notion_link,
             db_type=self._db_type,
-            categories=self._categories,
+            categories=[i.json for i in self._categories],
         )
 
     @json.setter
     def json(self, body):
         self._notion_link = body['link']
-        self._categories = body['categories']
         self._db_type = body['db_type']
+        self.categories = body['categories']

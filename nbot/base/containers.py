@@ -1,9 +1,10 @@
 from clients.notion_db import NBotCV
+from notion_scheme.buy import NBotBuyDB
 from notion_scheme.cinema import NBotCinemaDB
 from notion_scheme.empty import NBotEmptyDB
 from notion_scheme.link import NBotLinkDB
 from notion_scheme.podcasts import NBotPodcastDB
-from base.constants import NOTION_LINK_TYPE, NOTION_CINEMA_TYPE, NOTION_PODCAST_TYPE
+from base.constants import NOTION_BUY_TYPE, NOTION_CINEMA_TYPE, NOTION_LINK_TYPE, NOTION_PODCAST_TYPE
 from typing import Dict, List
 import logging
 
@@ -19,10 +20,12 @@ class NBotDBContainer:
         self.cinema = NBotCinemaDB()
         self.link = NBotLinkDB()
         self.podcast = NBotPodcastDB()
+        self.buy = NBotBuyDB()
         self._dbs = {
-            NOTION_LINK_TYPE: self.link,
             NOTION_CINEMA_TYPE: self.cinema,
+            NOTION_LINK_TYPE: self.link,
             NOTION_PODCAST_TYPE: self.podcast,
+            NOTION_BUY_TYPE: self.buy,
         }
 
     def process(self, link: str) -> (str, None):
@@ -53,7 +56,11 @@ class NBotDBContainer:
         domains = [get_domain(link=link) for link in links]
         logger.info("Updating {} with {}:{}".format(db_type, category, domains))
         typ = self.get(db_type, create_if_not_exists=True)
-        typ.categories = dict({category: domains})
+        typ.categories = [dict(
+            name=category,
+            domains=domains,
+            status="To Do"
+        )]
 
     def get_categories(self):
         res = []

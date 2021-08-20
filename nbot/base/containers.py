@@ -1,4 +1,4 @@
-from clients.notion_db import NBotCV
+from clients.notion_db import NBotCV, NBotCategory
 from notion_scheme.cinema import NBotCinemaDB
 from notion_scheme.empty import NBotEmptyDB
 from notion_scheme.link import NBotLinkDB
@@ -20,8 +20,8 @@ class NBotDBContainer:
         self.link = NBotLinkDB()
         self.podcast = NBotPodcastDB()
         self._dbs = {
-            NOTION_LINK_TYPE: self.link,
             NOTION_CINEMA_TYPE: self.cinema,
+            NOTION_LINK_TYPE: self.link,
             NOTION_PODCAST_TYPE: self.podcast,
         }
 
@@ -53,7 +53,11 @@ class NBotDBContainer:
         domains = [get_domain(link=link) for link in links]
         logger.info("Updating {} with {}:{}".format(db_type, category, domains))
         typ = self.get(db_type, create_if_not_exists=True)
-        typ.categories = dict({category: domains})
+        typ.categories = [dict(
+            name=category,
+            domains=domains,
+            status="To Do"
+        )]
 
     def get_categories(self):
         res = []

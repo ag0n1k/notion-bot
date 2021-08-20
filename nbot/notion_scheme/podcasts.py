@@ -1,7 +1,7 @@
 from base.constants import NOTION_PODCAST_TYPE
 from notion_scheme.decorators import notion_connect
 from notion_scheme.link import NBotLink
-from clients.notion_db import NBotCV, NBotElement
+from clients.notion_db import NBotCV, NBotElement, NBotCategory
 import logging
 
 logger = logging.getLogger(__name__)
@@ -22,9 +22,13 @@ class NBotPodcastElement(NBotElement):
 
 
 class NBotPodcastDB(NBotCV):
-    _categories = {
-        "Podcasts": ["podcasts.google.com", "podcasts.apple.com", "music.yandex.ru"]
-    }
+    _categories = [
+        NBotCategory(
+            name="Podcasts",
+            domains={"podcasts.google.com", "podcasts.apple.com", "music.yandex.ru"},
+            status="Listening"
+        )
+    ]
     _db_type = NOTION_PODCAST_TYPE
 
     def __init__(self):

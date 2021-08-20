@@ -1,9 +1,10 @@
 from clients.notion_db import NBotCV, NBotCategory
+from notion_scheme.buy import NBotPodcastDB
 from notion_scheme.cinema import NBotCinemaDB
 from notion_scheme.empty import NBotEmptyDB
 from notion_scheme.link import NBotLinkDB
 from notion_scheme.podcasts import NBotPodcastDB
-from base.constants import NOTION_LINK_TYPE, NOTION_CINEMA_TYPE, NOTION_PODCAST_TYPE
+from base.constants import NOTION_BUY_TYPE, NOTION_CINEMA_TYPE, NOTION_LINK_TYPE, NOTION_PODCAST_TYPE
 from typing import Dict, List
 import logging
 
@@ -19,10 +20,12 @@ class NBotDBContainer:
         self.cinema = NBotCinemaDB()
         self.link = NBotLinkDB()
         self.podcast = NBotPodcastDB()
+        self.buy = NBotPodcastDB()
         self._dbs = {
             NOTION_CINEMA_TYPE: self.cinema,
             NOTION_LINK_TYPE: self.link,
             NOTION_PODCAST_TYPE: self.podcast,
+            NOTION_BUY_TYPE: self.buy,
         }
 
     def process(self, link: str) -> (str, None):

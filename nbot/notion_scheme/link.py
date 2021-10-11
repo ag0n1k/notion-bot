@@ -1,4 +1,5 @@
 from base.constants import NOTION_LINK_TYPE
+from clients.notion_db import NBotElement
 from notion_scheme.decorators import notion_connect
 from bs4 import BeautifulSoup
 from clients.notion_db import NBotCV
@@ -35,6 +36,20 @@ class NBotLink:
     def domain(self):
         return get_domain(self.link)
 
+class NBotLinkElement(NBotElement):
+    url: str
+    domain: str
+    status: str
+    completed: str
+
+    notion_types = dict(
+        url="url",
+        domain="select",
+        status="select",
+        completed="date",
+        category="select"
+    )
+
 
 class NBotLinkDB(NBotCV):
     _db_type = NOTION_LINK_TYPE
@@ -53,4 +68,6 @@ class NBotLinkDB(NBotCV):
         row.domain = link.domain
         row.category = self.get_category_by_domain(link.domain)
         row.status = self.get_status_by_category(row.category) or status
+        if row.status == "Finished":
+            row.completed =
         return row.get_browseable_url()

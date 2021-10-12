@@ -29,11 +29,13 @@ jobs:
           port: ${{ secrets.PORT }}
           envs: GITHUB_REF
           script: |
-            docker stop $(docker ps -a -q)
+            docker stop nbot
+            docker rm nbot
             # docker system prune -a
             docker pull ag0n1k/notion-bot:${GITHUB_REF##*/}
             docker run \
               -e NOTION_TOKEN="${{ secrets.NOTION_TOKEN }}" \
               -e OMDB_API_KEY="${{ secrets.OMDB_API_KEY }}" \
               -e TELEGRAM_TOKEN="${{ secrets.TELEGRAM_TOKEN }}" \
-              -dit ag0n1k/notion-bot:${GITHUB_REF##*/}          
+              --name nbot \
+              -dit ag0n1k/notion-bot:${GITHUB_REF##*/}

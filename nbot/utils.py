@@ -11,6 +11,14 @@ def get_domain(link):
     return parsed_uri.netloc.replace('www.', '')
 
 
+def get_first_path(link):
+    parsed_uri = urlparse(link)
+    if parsed_uri.path:
+        return parsed_uri.path.split('/')[1]
+    else:
+        return ''
+
+
 def get_omdb_id(link):
     parsed_uri = urlparse(link)
     try:

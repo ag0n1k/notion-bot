@@ -401,9 +401,7 @@ class NBotConversationNotion(NBotConversation):
     @check_context
     def connect(update: Update, context: NBotContext) -> None:
         text = 'Choose db type:'
-        buttons = [
-            [InlineKeyboardButton(text=t, callback_data=t) for t in context.db_container.types]
-        ]
+        buttons = create_buttons(context.db_container.types, 3)
         if update.message:
             update.message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
         else:

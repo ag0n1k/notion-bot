@@ -1,10 +1,15 @@
 from clients.notion_db import NBotCV
 from notion_scheme.buy import NBotBuyDB
+from notion_scheme.youtube import NBotYoutubeDB
 from notion_scheme.cinema import NBotCinemaDB
 from notion_scheme.empty import NBotEmptyDB
 from notion_scheme.link import NBotLinkDB
 from notion_scheme.podcasts import NBotPodcastDB
-from base.constants import NOTION_BUY_TYPE, NOTION_CINEMA_TYPE, NOTION_LINK_TYPE, NOTION_PODCAST_TYPE
+from notion_scheme.read import NBotReadDB
+from notion_scheme.examine import NBotExamineDB
+from notion_scheme.keep import NBotKeepDB
+from base.constants import NOTION_BUY_TYPE, NOTION_CINEMA_TYPE, NOTION_LINK_TYPE, NOTION_PODCAST_TYPE, \
+    NOTION_YOUTUBE_TYPE, NOTION_READ_TYPE, NOTION_EXAMINE_TYPE, NOTION_KEEP_TYPE
 from typing import Dict, List
 import logging
 
@@ -21,11 +26,19 @@ class NBotDBContainer:
         self.link = NBotLinkDB()
         self.podcast = NBotPodcastDB()
         self.buy = NBotBuyDB()
+        self.youtube = NBotYoutubeDB()
+        self.read = NBotReadDB()
+        self.examine = NBotExamineDB()
+        self.keep = NBotKeepDB()
         self._dbs = {
             NOTION_CINEMA_TYPE: self.cinema,
             NOTION_LINK_TYPE: self.link,
             NOTION_PODCAST_TYPE: self.podcast,
             NOTION_BUY_TYPE: self.buy,
+            NOTION_YOUTUBE_TYPE: self.youtube,
+            NOTION_READ_TYPE: self.read,
+            NOTION_KEEP_TYPE: self.keep,
+            NOTION_EXAMINE_TYPE: self.examine,
         }
 
     def process(self, link: str) -> (str, None):

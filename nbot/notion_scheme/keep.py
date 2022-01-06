@@ -1,4 +1,4 @@
-from base.constants import NOTION_YOUTUBE_TYPE
+from base.constants import NOTION_KEEP_TYPE
 from notion_scheme.decorators import notion_connect
 from notion_scheme.link import NBotLink
 from clients.notion_db import NBotCV, NBotCategory
@@ -7,19 +7,18 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class NBotYoutubeDB(NBotCV):
+class NBotKeepDB(NBotCV):
     _categories = {
         NBotCategory(
-            name="Youtube",
+            name="Keep",
             domains={
-                "youtube.com",
-                "youtu.be"
+                "t.me",
             },
             status="Finished"
         ),
     }
 
-    _db_type = NOTION_YOUTUBE_TYPE
+    _db_type = NOTION_KEEP_TYPE
 
     def __init__(self):
         super().__init__()

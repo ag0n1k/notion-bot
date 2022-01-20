@@ -1,9 +1,9 @@
-from nbot.utils import get_domain, get_omdb_id, create_buttons, MetaSingleton
+from nbot.utils import domain, get_omdb_id, MetaSingleton
 
 
 def test_domain():
-    assert get_domain("http://youtube.com/aw2asd/") == "youtube.com"
-    assert get_domain("http://www.youtube.com/aw2asd/") == "youtube.com"
+    assert domain("http://youtube.com/aw2asd/") == "youtube.com"
+    assert domain("http://www.youtube.com/aw2asd/") == "youtube.com"
 
 
 def test_positive_omdb_id():
@@ -16,21 +16,6 @@ def test_positive_omdb_id():
 def test_negative_omdb_id():
     assert get_omdb_id("https://www.imdb.com") is None
     assert get_omdb_id("https://m.imdb.com/") is None
-
-
-def test_buttons():
-    assert len(create_buttons([1, 2, 3])) == 2
-    assert len(create_buttons([1, 2, 3], 3)) == 2
-    assert len(create_buttons([1, 2, 3, 4, 5, 6])) == 3
-    assert len(create_buttons([1, 2, 3, 4, 5, 6, 7, 8, 9])) == 4
-
-    assert len(create_buttons([1, 2, 3])[0]) == 2
-    assert len(create_buttons([1, 2, 3], 3)[0]) == 2
-    assert len(create_buttons([1, 2, 3, 4, 5, 6])[0]) == 2
-    assert len(create_buttons([1, 2, 3, 4, 5, 6, 7, 8, 9])[0]) == 2
-
-    assert len(create_buttons([1, 2, 3, 4], 4)[0]) == 3
-    assert len(create_buttons([1, 2, 3, 4, 5, 6], 4)[0]) == 3
 
 
 class TestMeta(metaclass=MetaSingleton):

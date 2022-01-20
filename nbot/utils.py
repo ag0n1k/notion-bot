@@ -1,42 +1,31 @@
 from urllib.parse import urlparse
-
-from telegram import InlineKeyboardButton
+from aiogram import types
 import logging
+from typing import List
 
 logger = logging.getLogger(__name__)
 
 
-def get_domain(link):
+def ensure_http_in_link(link):
+    if not link.startswith('http'):
+        return 'http://' + link
+    return link
+
+
+def domain(link):
     parsed_uri = urlparse(link)
     return parsed_uri.netloc.replace('www.', '')
 
 
-def get_first_path(link):
-    parsed_uri = urlparse(link)
-    if parsed_uri.path:
-        return parsed_uri.path.split('/')[1]
-    else:
-        return ''
-
-
-def get_omdb_id(link):
-    parsed_uri = urlparse(link)
-    try:
-        return list(filter(None, parsed_uri.path.split('/'))).pop()
-    except IndexError:
-        logger.error("Unable to get omdb id from {}".format(link), exc_info=True)
-        return None
-
-
-def create_buttons(_list: list, _length=3):
-    res = []
-    tmp = []
-    for i, t in enumerate(_list):
-        if (i + 1) % _length == 0:
-            res.append(tmp)
-            tmp = []
-        tmp.append(InlineKeyboardButton(text=t, callback_data=t))
-    res.append(tmp)
+def parse_links(entities: List[types.MessageEntity], text: str):
+    res = set()
+    for entity in entities:
+        if entity.type == 'text_link':
+            res.add(entity.url)
+        elif entity.type == 'url':
+            res.add(text[entity.offset:entity.offset + entity.length])
+        else:
+            logger.warning('got unknown type: {}'.format(entity.type))
     return res
 
 

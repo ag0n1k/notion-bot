@@ -1,4 +1,4 @@
-from nbot.utils import domain, MetaSingleton
+from utils import domain, MetaSingleton
 
 
 def test_domain():

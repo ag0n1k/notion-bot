@@ -2,7 +2,7 @@ from aiogram import Bot, Dispatcher, executor, types
 from clients.notion_db import NBotClient
 from clients.omdb import NBotOMDBClient
 from schemes.link import NBotLink, NBotCinemaLink, NBotWatchLink
-import nbot.utils as utils
+import utils
 import logging
 import os
 

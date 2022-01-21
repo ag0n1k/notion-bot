@@ -56,11 +56,11 @@ async def echo(message: types.Message):
 @dp.callback_query_handler()
 async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
     await query.answer(f'You answered with {query.data!r}')
-    link = query.message.reply_to_message.text
-    nlink = domain_classes.get(utils.domain(link), NBotLink)(link)
-    nlink.process()
-    await query.message.edit_text("Processed:\n{}".format(
-        client.create_page(client.get_id_by_db_name(query.data), nlink.properties)))
+    for link in utils.parse_links(query.message.reply_to_message.entities, query.message.reply_to_message.text):
+        nlink = domain_classes.get(utils.domain(link), NBotLink)(link)
+        nlink.process()
+        await query.message.edit_text("Processed:\n{}".format(
+            client.create_page(client.get_id_by_db_name(query.data), nlink.properties)))
     client.init_maps()
 
 

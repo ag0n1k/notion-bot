@@ -49,11 +49,12 @@ class NBotIMDBElement(NBotElement):
     props = {}
 
     def dict(self):
+        released = {"start": self.Released} if self.Released else None
         self.props = {
             "Name": {"title": [{"text": {"content": self.Title}}]},
             "year": {"select": {"name": self.Year}},
             "rated": {"select": {"name": self.Rated}},
-            "released": {"date": {"start": self.Released}},
+            "released": {"date": released},
             "runtime": {"rich_text": [{"text": {"content": self.Runtime}}]},
             "genre": {"multi_select": [{"name": item} for item in self.Genre]},
             "director": {"multi_select": [{"name": item} for item in self.Director]},

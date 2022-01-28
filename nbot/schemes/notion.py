@@ -45,3 +45,4 @@ class NBotElement:
             self.__setattr__(attr, datetime.strptime(attribute, '%d %b %Y').date().isoformat())
         except ValueError:
             logger.error("Unable to parse date: {}".format(attr))
+            self.__setattr__(attr, None)

@@ -28,9 +28,12 @@ class NBotLink:
 
     @property
     def title(self):
-        if not self.content:
-            return "No Content, Sorry"
-        return self.content.find('title').string
+        try:
+            if not self.content:
+                return "No Content, Sorry"
+            return self.content.find('title').string
+        except AttributeError:
+            return "No Title, Sorry"
 
     @property
     def properties(self):

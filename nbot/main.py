@@ -2,9 +2,14 @@ from aiogram import Bot, Dispatcher, executor, types
 from clients.notion_db import NBotClient
 from clients.omdb import NBotOMDBClient
 from schemes.link import NBotLink, NBotCinemaLink, NBotWatchLink
-import utils
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.dispatcher import FSMContext
+
 import logging
 import os
+import utils
+
 
 # Configure logging
 logging.basicConfig(
@@ -15,8 +20,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize bot and dispatcher
+storage = MemoryStorage()
 bot = Bot(token=os.environ.get('TELEGRAM_TOKEN'))
-dp = Dispatcher(bot)
+dp = Dispatcher(bot, storage=storage)
 client = NBotClient(token=os.environ.get('NOTION_TOKEN'))
 omdb = NBotOMDBClient(api_key=os.environ.get('OMDB_API_KEY'))
 
@@ -26,6 +32,10 @@ domain_classes = {
     "m.imdb.com": NBotCinemaLink,
     "imdb.com": NBotCinemaLink,
 }
+
+
+class PhotoState(StatesGroup):
+    name = State()
 
 
 @dp.message_handler(commands=['start', 'help'])
@@ -50,6 +60,7 @@ async def echo(message: types.Message):
             return
         nlink.process()
         res.append(client.create_page(client.get_id_by_domain(nlink.domain), nlink.properties))
+    await message.reply("Fixed")
     await message.reply("Processed:\n{}".format("\n".join(res)))
 
 
@@ -62,6 +73,27 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
         await query.message.edit_text("Processed:\n{}".format(
             client.create_page(client.get_id_by_db_name(query.data), nlink.properties)))
     client.init_maps()
+
+
+@dp.message_handler(content_types=['photo'])
+async def handle_docs_photo(message):
+    await PhotoState.name.set()
+    await message.reply("Name it!")
+
+
+@dp.message_handler(state=PhotoState.name)
+async def process_message(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['text'] = message.text
+        user_message = data['text']
+
+        otvet_klienty = ""
+        await bot.send_message(
+            message.from_user.id,
+            otvet_klienty,
+        )
+
+    await state.finish()
 
 
 def main():

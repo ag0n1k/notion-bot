@@ -16,7 +16,10 @@ class NBotClient(metaclass=MetaSingleton):
 
     def init_maps(self):
         logger.info("Initializing the current state...")
-        for db in self.client.databases.list()['results']:
+        dbs = self.client.search(filter=dict(value='database', property='object'), page_size=100)
+        for db in dbs['results']:
+            if not db['properties'].get('Domain'):
+                continue
             for domain in [opt['name'] for opt in db['properties']['Domain']['select']['options']]:
                 self._domain_map[domain] = db['id']
             self._db_map[db['title'][0]['text']['content']] = db['id']

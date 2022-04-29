@@ -1,5 +1,5 @@
 aiogram
 beautifulsoup4
 bs4
-notion-client
+notion-client==1.0.0
 requests

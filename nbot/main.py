@@ -41,15 +41,20 @@ async def echo(message: types.Message):
     res = []
     for link in utils.parse_links(message.entities, message.text):
         nlink = domain_classes.get(utils.domain(link), NBotLink)(link)
-        if not client.get_id_by_domain(nlink.domain):
+        db_id = client.get_id_by_domain(nlink.domain)
+        if not db_id:
             keyboard_markup = types.InlineKeyboardMarkup()
             for db in client.databases:
                 keyboard_markup.row(types.InlineKeyboardButton(db, callback_data=db))
             await message.reply("What is the category of this domain? {}".format(nlink.domain),
                                 reply_markup=keyboard_markup)
             return
-        nlink.process()
-        res.append(client.create_page(client.get_id_by_domain(nlink.domain), nlink.properties))
+        search_res = client.search_by_url(database_id=db_id, name=nlink.link)
+        if not search_res:
+            nlink.process()
+            res.append(client.create_page(client.get_id_by_domain(nlink.domain), nlink.properties))
+        else:
+            res.append(search_res['url'])
     await message.reply("Processed:\n{}".format("\n".join(res)))
 
 

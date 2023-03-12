@@ -51,3 +51,18 @@ class NBotClient(metaclass=MetaSingleton):
         logger.info(f"Saving to {database_id}")
         page = self.client.pages.create(parent={"database_id": database_id}, properties=props, children=[])
         return page['url']
+
+    def search_by_url(self, database_id, name):
+        logger.info(f"Search for {name} in {database_id}...")
+        results = self.client.databases.query(
+            **{
+                "database_id": database_id,
+                "filter": {
+                    "property": "URL",
+                    "url": {
+                        "equals": name
+                    }
+                }
+            }
+        ).get("results")
+        return results[0] if len(results) == 1 else False

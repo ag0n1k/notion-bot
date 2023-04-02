@@ -35,9 +35,19 @@ async def send_welcome(message: types.Message):
     """
     await message.reply("Hi!\nI'm NotionLinkBot!\nPowered by aiogram.")
 
+@dp.message_handler(commands=['get'])
+async def get_handler(message: types.Message):
+    """
+    This handler will be called when user sends `/start` or `/help` command
+    """
+    keyboard_markup = types.InlineKeyboardMarkup()
+    for db in client.databases:
+        keyboard_markup.row(types.InlineKeyboardButton(db, callback_data="get|" + db))
+    await message.reply("What is the category you looking for?", reply_markup=keyboard_markup)
+
 
 @dp.message_handler()
-async def echo(message: types.Message):
+async def main_handler(message: types.Message):
     res = []
     for link in utils.parse_links(message.entities, message.text):
         nlink = domain_classes.get(utils.domain(link), NBotLink)(link)
@@ -45,7 +55,7 @@ async def echo(message: types.Message):
         if not db_id:
             keyboard_markup = types.InlineKeyboardMarkup()
             for db in client.databases:
-                keyboard_markup.row(types.InlineKeyboardButton(db, callback_data=db))
+                keyboard_markup.row(types.InlineKeyboardButton(db, callback_data="parse|" + db))
             await message.reply("What is the category of this domain? {}".format(nlink.domain),
                                 reply_markup=keyboard_markup)
             return
@@ -60,13 +70,19 @@ async def echo(message: types.Message):
 
 @dp.callback_query_handler()
 async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
-    await query.answer(f'You answered with {query.data!r}')
-    for link in utils.parse_links(query.message.reply_to_message.entities, query.message.reply_to_message.text):
-        nlink = domain_classes.get(utils.domain(link), NBotLink)(link)
-        nlink.process()
-        await query.message.edit_text("Processed:\n{}".format(
-            client.create_page(client.get_id_by_db_name(query.data), nlink.properties)))
-    client.init_maps()
+    action_, data = query.data.split("|")
+    await query.answer(f'You answered with {data!r}')
+    # todo: split? or case?
+    if action_ == 'parse':
+        for link in utils.parse_links(query.message.reply_to_message.entities, query.message.reply_to_message.text):
+            nlink = domain_classes.get(utils.domain(link), NBotLink)(link)
+            nlink.process()
+            await query.message.edit_text("Processed:\n{}".format(
+                client.create_page(client.get_id_by_db_name(data), nlink.properties)))
+        client.init_maps()
+    elif action_ == 'get':
+        page_ = client.get_random_page_from_db(client.get_id_by_db_name(data))
+        await query.message.edit_text(f"{data}:\n - {page_['properties']['URL']['url']}\n - {page_['url']}")
 
 
 def main():

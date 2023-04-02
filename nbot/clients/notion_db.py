@@ -2,7 +2,7 @@ import logging
 from notion_client import Client
 
 from utils import MetaSingleton
-
+import random
 logger = logging.getLogger(__name__)
 
 
@@ -66,3 +66,19 @@ class NBotClient(metaclass=MetaSingleton):
             }
         ).get("results")
         return results[0] if len(results) == 1 else False
+
+
+    def get_random_page_from_db(self, database_id):
+        logger.info(f"Search random page in {database_id}...")
+        results = self.client.databases.query(
+            **{
+                "database_id": database_id,
+                "filter": {
+                    "property": "Status",
+                    "select": {
+                        "does_not_equal": "Finished"
+                    }
+                }
+            }
+        ).get("results")
+        return random.choice(results)

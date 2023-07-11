@@ -2,3 +2,4 @@ aiogram
 beautifulsoup4
 bs4
 notion-client==2.0.0
+requests

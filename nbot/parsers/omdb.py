@@ -120,7 +120,7 @@ class NBotOMDBParser:
         try:
             return list(filter(None, parsed_uri.path.split('/'))).pop()
         except IndexError:
-            logger.error("Unable to get omdb id from {}".format(link), exc_info=True)
+            logger.error("Unable to get omdb id from {}".format(uri), exc_info=True)
             return None
 
     def get(self, link) -> (NBotIMDBElement, None):

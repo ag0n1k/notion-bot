@@ -2,10 +2,42 @@ import requests
 import logging
 from clients.omdb import NBotOMDBClient
 from schemes.notion import NBotElement
-from typing import Dict
+from typing import Dict, List
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
+
+
+class NBotIMDBSeasonEpisode:
+    Title: str
+    Released: str
+    Episode: str
+    imdbRating: str
+    imdbID: str
+
+
+class NBotIMDBSeason:
+    Season: str
+    Episodes: List[NBotIMDBSeasonEpisode]
+
+    def __init__(self, season):
+        self.Season = season
+        self.Episodes = []
+
+    def to_notion(self):
+        res = [
+            {"heading_2": {"rich_text": [{"type": "text", "text": {"content": "Сезон {}".format(self.Season)}}]}}
+        ]
+        for ep in self.Episodes:
+            res.append(
+                {"heading_3": {
+                    "rich_text": [{"type": "text", "text": {
+                        "content": "Серия {} — {} {}⭐".format(ep.Episode, ep.Title, ep.imdbRating)}}]}}
+            )
+            res.append(
+                {"paragraph": {"rich_text": [{"type": "text", "text": {"content": "..."}}]}}
+            )
+        return res
 
 
 class NBotIMDBElement(NBotElement):
@@ -82,16 +114,17 @@ class NBotOMDBParser:
         }
         logger.info("{}".format(self.__dict__))
 
-    def get(self, link) -> (NBotIMDBElement, None):
-        def get_omdb_id(uri):
-            parsed_uri = urlparse(uri)
-            try:
-                return list(filter(None, parsed_uri.path.split('/'))).pop()
-            except IndexError:
-                logger.error("Unable to get omdb id from {}".format(link), exc_info=True)
-                return None
+    @staticmethod
+    def get_omdb_id(uri):
+        parsed_uri = urlparse(uri)
+        try:
+            return list(filter(None, parsed_uri.path.split('/'))).pop()
+        except IndexError:
+            logger.error("Unable to get omdb id from {}".format(link), exc_info=True)
+            return None
 
-        imdb_id = get_omdb_id(link)
+    def get(self, link) -> (NBotIMDBElement, None):
+        imdb_id = self.get_omdb_id(link)
         if not imdb_id:
             logger.error("No imdb id for link {}".format(link))
             return None
@@ -104,6 +137,30 @@ class NBotOMDBParser:
         res.raise_for_status()
         self.content = res.json()
         return self.parse()
+
+    def get_season(self, link, number) -> (NBotIMDBSeason, None):
+        imdb_id = self.get_omdb_id(link)
+        if not imdb_id:
+            logger.error("No imdb id for link {}".format(link))
+            return None
+        logger.info("Getting the {} season {}".format(imdb_id, number))
+        res = self.session.get(
+            self.client.url,
+            params=dict(apikey=self.client.key, i=imdb_id, season=number),
+            timeout=self.client.timeout
+        )
+        res.raise_for_status()
+        result = res.json()
+        season = NBotIMDBSeason(result['Season'])
+        for episode in result['Episodes']:
+            item = NBotIMDBSeasonEpisode()
+            for k, v in episode.items():
+                if k in item.__annotations__.keys():
+                    setattr(item, k, v)
+                else:
+                    logger.info("Skipping {}".format(k))
+            season.Episodes.append(item)
+        return season
 
     def parse(self) -> (NBotIMDBElement, None):
         if not self.content:
@@ -145,7 +202,10 @@ class NBotIMDBSeries(NBotIMDBElement):
 
     def dict(self):
         super(NBotIMDBSeries, self).dict()
-        self.props.update({"totalseasons": {"rich_text": [{"text": {"content": self.totalSeasons}}]}})
+        try:
+            self.props.update({"totalseasons": {"number": float(self.totalSeasons)}})
+        except:
+            pass
         return self.props
 
 

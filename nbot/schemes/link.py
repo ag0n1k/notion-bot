@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
-from parsers.omdb import NBotOMDBParser, NBotIMDBElement
+from parsers.omdb import NBotOMDBParser, NBotIMDBElement, NBotIMDBSeries
 import logging
 import utils
 
@@ -11,6 +11,7 @@ class NBotLink:
     link: str
     content: BeautifulSoup = None
     domain: str
+    icon = {"type": "emoji", "emoji": "📰"}
     _status = "To Do"
     _domains = set()
 
@@ -46,19 +47,35 @@ class NBotLink:
 
 
 class NBotWatchLink(NBotLink):
-    _status = "Finished"
+    _status = "To Do"
+    icon = {"type": "emoji", "emoji": "▶️"}
 
 
 class NBotCinemaLink(NBotLink):
-    element: NBotIMDBElement
+    element: NBotIMDBElement = None
+    icon = {"type": "emoji", "emoji": "🎬"}
 
     def process(self):
-        parser = NBotOMDBParser()
         try:
+            parser = NBotOMDBParser()
             self.element = parser.get(self.link)
+            if isinstance(self.element, NBotIMDBSeries):
+                self.icon = {"type": "emoji", "emoji": "🍿"}
         except Exception as e:
             logger.error("Cannot parse the {}".format(self.link))
             logger.error(e, exc_info=True)
+
+    def blocks(self, blocks):
+        children = []
+        if self.element is None:
+            self.process()
+        parser = NBotOMDBParser()
+        if isinstance(self.element, NBotIMDBSeries):
+            children.append({'table_of_contents': {'color': 'gray'}})
+            for season in range(1, int(self.element.totalSeasons) + 1):
+                s = parser.get_season(self.link, season)
+                children.extend(s.to_notion())
+        return children
 
     @property
     def properties(self):

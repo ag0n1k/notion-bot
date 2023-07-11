@@ -47,10 +47,10 @@ class NBotClient(metaclass=MetaSingleton):
         else:
             return self._db_map[name]
 
-    def create_page(self, database_id, props):
+    def create_page(self, database_id, props, icon):
         logger.info(f"Saving to {database_id}")
-        page = self.client.pages.create(parent={"database_id": database_id}, properties=props, children=[])
-        return page['url']
+        page = self.client.pages.create(parent={"database_id": database_id}, properties=props, children=[], icon=icon)
+        return page
 
     def search_by_url(self, database_id, name):
         logger.info(f"Search for {name} in {database_id}...")

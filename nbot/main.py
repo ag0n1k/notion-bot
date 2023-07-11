@@ -35,6 +35,7 @@ async def send_welcome(message: types.Message):
     """
     await message.reply("Hi!\nI'm NotionLinkBot!\nPowered by aiogram.")
 
+
 @dp.message_handler(commands=['get'])
 async def get_handler(message: types.Message):
     """
@@ -59,13 +60,18 @@ async def main_handler(message: types.Message):
             await message.reply("What is the category of this domain? {}".format(nlink.domain),
                                 reply_markup=keyboard_markup)
             return
-        search_res = client.search_by_url(database_id=db_id, name=nlink.link)
-        if not search_res:
+        page_ = client.search_by_url(database_id=db_id, name=nlink.link)
+
+        if not page_:
             nlink.process()
-            res.append(client.create_page(client.get_id_by_domain(nlink.domain), nlink.properties))
-        else:
-            res.append(search_res['url'])
-    await message.reply("Processed:\n{}".format("\n".join(res)))
+            page_ = client.create_page(client.get_id_by_domain(nlink.domain), nlink.properties, icon=nlink.icon)
+        res.append(page_['url'])
+        blocks = client.client.blocks.children.list(page_['id'])
+        if len(blocks['results']) == 0:
+            children = nlink.blocks(blocks)
+            client.client.blocks.children.append(block_id=page_['id'], children=children)
+
+        await message.reply("Processed:\n{}".format("\n".join(res)))
 
 
 @dp.callback_query_handler()

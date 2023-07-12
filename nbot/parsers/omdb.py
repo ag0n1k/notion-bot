@@ -32,7 +32,7 @@ class NBotIMDBSeason:
             res.append(
                 {"heading_3": {
                     "rich_text": [{"type": "text", "text": {
-                        "content": "Серия {} — {} {}⭐".format(ep.Episode, ep.Title, ep.imdbRating)}}]}}
+                        "content": "Серия {} — {}".format(ep.Episode, ep.Title)}}]}}
             )
             res.append(
                 {"paragraph": {"rich_text": [{"type": "text", "text": {"content": "..."}}]}}

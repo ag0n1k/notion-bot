@@ -49,7 +49,7 @@ async def get_handler(message: types.Message):
 
 @dp.message_handler()
 async def main_handler(message: types.Message):
-    answer = await message.reply("Got your message ...")
+
     res = []
     for link in utils.parse_links(message.entities, message.text):
         nlink = domain_classes.get(utils.domain(link), NBotLink)(link)
@@ -61,6 +61,7 @@ async def main_handler(message: types.Message):
             await message.reply("What is the category of this domain? {}".format(nlink.domain),
                                 reply_markup=keyboard_markup)
             return
+        answer = await message.reply("Got your message ...")
         page_ = client.search_by_url(database_id=db_id, name=nlink.link)
 
         if not page_:

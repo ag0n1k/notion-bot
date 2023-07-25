@@ -87,8 +87,8 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
         for link in utils.parse_links(query.message.reply_to_message.entities, query.message.reply_to_message.text):
             nlink = domain_classes.get(utils.domain(link), NBotLink)(link)
             nlink.process()
-            await query.message.edit_text("Processed:\n{}".format(
-                client.create_page(client.get_id_by_db_name(data), nlink.properties, icon=nlink.icon)))
+            page_ = client.create_page(client.get_id_by_db_name(data), nlink.properties, icon=nlink.icon)
+            await query.message.edit_text("Processed:\n{}".format(page_['url']))
         client.init_maps()
     elif action_ == 'get':
         page_ = client.get_random_page_from_db(client.get_id_by_db_name(data))

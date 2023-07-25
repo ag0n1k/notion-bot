@@ -49,6 +49,7 @@ async def get_handler(message: types.Message):
 
 @dp.message_handler()
 async def main_handler(message: types.Message):
+    answer = await message.reply("Got your message ...")
     res = []
     for link in utils.parse_links(message.entities, message.text):
         nlink = domain_classes.get(utils.domain(link), NBotLink)(link)
@@ -63,15 +64,17 @@ async def main_handler(message: types.Message):
         page_ = client.search_by_url(database_id=db_id, name=nlink.link)
 
         if not page_:
+            await answer.edit_text("Creating new page ...")
             nlink.process()
             page_ = client.create_page(client.get_id_by_domain(nlink.domain), nlink.properties, icon=nlink.icon)
         res.append(page_['url'])
         blocks = client.client.blocks.children.list(page_['id'])
         if len(blocks['results']) == 0:
+            await answer.edit_text("Updating content...")
             children = nlink.blocks(blocks)
-            client.client.blocks.children.append(block_id=page_['id'], children=children)
-
-        await message.reply("Processed:\n{}".format("\n".join(res)))
+            for chunk in utils.chunks(children, 100):
+                client.client.blocks.children.append(block_id=page_['id'], children=chunk)
+    await answer.edit_text("Processed:\n{}".format("\n".join(res)))
 
 
 @dp.callback_query_handler()

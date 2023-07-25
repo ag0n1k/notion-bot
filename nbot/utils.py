@@ -6,6 +6,12 @@ from typing import List
 logger = logging.getLogger(__name__)
 
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
 def ensure_http_in_link(link):
     if not link.startswith('http'):
         return 'http://' + link

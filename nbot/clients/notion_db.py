@@ -65,6 +65,8 @@ class NBotClient(metaclass=MetaSingleton):
                 }
             }
         ).get("results")
+        # todo: there may be many results if the page will be created for each season... but...
+        # maybe each season must be a type of a new page...
         return results[0] if len(results) == 1 else False
 
 

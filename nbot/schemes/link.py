@@ -45,6 +45,9 @@ class NBotLink:
             "URL": {"type": "url", "url": self.link},
         }
 
+    def blocks(self, blocks):
+        return []
+
 
 class NBotWatchLink(NBotLink):
     _status = "To Do"

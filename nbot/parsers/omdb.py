@@ -26,13 +26,15 @@ class NBotIMDBSeason:
 
     def to_notion(self):
         res = [
-            {"heading_2": {"rich_text": [{"type": "text", "text": {"content": "Сезон {}".format(self.Season)}}]}}
+            {"heading_2": {
+                "is_toggleable": True,
+                "rich_text": [{"type": "text", "text": {"content": "Сезон {}".format(self.Season)}}]}}
         ]
         for ep in self.Episodes:
             res.append(
                 {"heading_3": {
                     "rich_text": [{"type": "text", "text": {
-                        "content": "Серия {} — {}".format(ep.Episode, ep.Title)}}]}}
+                        "content": "Серия {} — {} — ".format(ep.Episode, ep.Title)}}]}}
             )
             res.append(
                 {"paragraph": {"rich_text": [{"type": "text", "text": {"content": "..."}}]}}

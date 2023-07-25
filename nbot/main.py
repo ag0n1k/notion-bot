@@ -87,7 +87,7 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
             nlink = domain_classes.get(utils.domain(link), NBotLink)(link)
             nlink.process()
             await query.message.edit_text("Processed:\n{}".format(
-                client.create_page(client.get_id_by_db_name(data), nlink.properties)))
+                client.create_page(client.get_id_by_db_name(data), nlink.properties, icon=nlink.icon)))
         client.init_maps()
     elif action_ == 'get':
         page_ = client.get_random_page_from_db(client.get_id_by_db_name(data))

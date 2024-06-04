@@ -206,7 +206,8 @@ class NBotIMDBSeries(NBotIMDBElement):
         super(NBotIMDBSeries, self).dict()
         try:
             self.props.update({"totalseasons": {"number": float(self.totalSeasons)}})
-        except:
+        except Exception:
+
             pass
         return self.props
 

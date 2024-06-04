@@ -1,42 +1,42 @@
-name: Docker Image CI/CD
-
-on:
-  workflow_dispatch:
-  release:
-    types: # This configuration does not affect the page_build event above
-      - created
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}   
-      - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag ag0n1k/notion-bot:${GITHUB_REF##*/}
-      - name: Push the Docker image
-        run: |
-          docker push ag0n1k/notion-bot:${GITHUB_REF##*/}
-
-      - name: Deploy via SSH action
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.RSA_KEY }}
-          port: ${{ secrets.PORT }}
-          envs: GITHUB_REF
-          script: |
-            docker stop nbot
-            docker rm nbot
-            # docker system prune -a
-            docker pull ag0n1k/notion-bot:${GITHUB_REF##*/}
-            docker run \
-              -e NOTION_TOKEN="${{ secrets.NOTION_TOKEN }}" \
-              -e OMDB_API_KEY="${{ secrets.OMDB_API_KEY }}" \
-              -e TELEGRAM_TOKEN="${{ secrets.TELEGRAM_TOKEN }}" \
-              --name nbot \
-              -dit ag0n1k/notion-bot:${GITHUB_REF##*/}
+#name: Docker Image CI/CD
+#
+#on:
+#  workflow_dispatch:
+#  release:
+#    types: # This configuration does not affect the page_build event above
+#      - created
+#jobs:
+#  release:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#      - name: Login to Docker Hub
+#        uses: docker/login-action@v1
+#        with:
+#          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+#          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+#      - name: Build the Docker image
+#        run: docker build . --file Dockerfile --tag ag0n1k/notion-bot:${GITHUB_REF##*/}
+#      - name: Push the Docker image
+#        run: |
+#          docker push ag0n1k/notion-bot:${GITHUB_REF##*/}
+#
+#      - name: Deploy via SSH action
+#        uses: appleboy/ssh-action@master
+#        with:
+#          host: ${{ secrets.SSH_HOST }}
+#          username: ${{ secrets.SSH_USERNAME }}
+#          key: ${{ secrets.RSA_KEY }}
+#          port: ${{ secrets.PORT }}
+#          envs: GITHUB_REF
+#          script: |
+#            docker stop nbot
+#            docker rm nbot
+#            # docker system prune -a
+#            docker pull ag0n1k/notion-bot:${GITHUB_REF##*/}
+#            docker run \
+#              -e NOTION_TOKEN="${{ secrets.NOTION_TOKEN }}" \
+#              -e OMDB_API_KEY="${{ secrets.OMDB_API_KEY }}" \
+#              -e TELEGRAM_TOKEN="${{ secrets.TELEGRAM_TOKEN }}" \
+#              --name nbot \
+#              -dit ag0n1k/notion-bot:${GITHUB_REF##*/}

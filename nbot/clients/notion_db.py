@@ -69,7 +69,6 @@ class NBotClient(metaclass=MetaSingleton):
         # maybe each season must be a type of a new page...
         return results[0] if len(results) == 1 else False
 
-
     def get_random_page_from_db(self, database_id):
         logger.info(f"Search random page in {database_id}...")
         results = self.client.databases.query(
